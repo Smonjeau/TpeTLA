@@ -1,13 +1,24 @@
 %{
 
 #include <stdio.h>
+#include "symbol_table.h"
+#include <string.h>
 int yylex();
 void yyerror(char *s);
+struct sym sym_table[MAX_SYMB];
+int yydebug = 1;
 %}
 
-%token  DO WHILE ARITHMETICAL_OPS ASSIGN_OP MULT_DIV_OPS AND OR NOT RELATIONAL_OPS  TYPE IF ELSE 
+%union {
+int val;
+struct sym *symp;
+}
+%token <symp> VAR
+%token <val> VALUE 
+
+%token  DO WHILE  ARITHMETICAL_OPS ASSIGN_OP MULT_DIV_OPS AND OR NOT RELATIONAL_OPS  TYPE IF ELSE 
 %token  LETTER DECIMAL OPEN_PAR CLOSE_PAR OPEN_BRACKET CLOSE_BRACKET SEMICOLON ID ARROW DOUBLE_ARROW
-%token  GRAPH DFS BFS INT STRING W_GRAPH TREE D_GRAPH VAR CONS
+%token  GRAPH DFS BFS INT STRING W_GRAPH TREE D_GRAPH  CONS
 %%
 
 program:  defs list {;};
@@ -52,14 +63,15 @@ t:  t MULT_DIV_OPS f
         | f
         ;
 
-f:  VAR | CONS ;
+f:  VAR | VALUE ;
 
 defs:   defs def | def ;
 
-def:    type n 
+def:    type n ';'
         | GRAPH n ASSIGN_OP OPEN_BRACKET node_defs CLOSE_BRACKET
         | D_GRAPH n ASSIGN_OP OPEN_BRACKET d_node_defs CLOSE_BRACKET
         | W_GRAPH n ASSIGN_OP OPEN_BRACKET w_node_defs CLOSE_BRACKET
+        {printf("hola\n");}
         ;
 
 gr_iter_type: DFS | BFS ;
@@ -70,7 +82,7 @@ gr_iter:    gr_iter_type OPEN_PAR n SEMICOLON n CLOSE_PAR s
         ;
 type: INT | STRING ;
 
-n:  l text ;
+n:  VAR ;
 
 text:   l text 
         | d text
@@ -130,4 +142,23 @@ void yyerror(s)
 char * s;
 {
     fprintf( stderr,"errorr ---%s\n",s);
+}
+
+struct sym * sym_table_look(char * s){
+        char * p;
+        struct sym * st;
+        int i;
+        for(i=0;i<MAX_SYMB;i++){
+                //ya definido
+                st = &sym_table[i];
+                if(st->name && !strcmp(st->name,s))
+                        return st;
+
+        
+                if(!st->name){
+                        st->name = strdup(s);
+                        return st;
+                }
+        }
+        yyerror("Limit of symbs reached\n");
 }
