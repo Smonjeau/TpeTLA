@@ -10,6 +10,11 @@ typedef struct edge {           //TODO weighted edge and directional edge
     int src, dest;
 }edge;
 
+typedef struct node {
+    int value;
+    struct node * next;
+}node;
+
 typedef graph * graphADT;
 
 graph * newGraph(struct edge edges[], int n);

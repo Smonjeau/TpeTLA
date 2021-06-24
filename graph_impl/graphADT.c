@@ -3,17 +3,9 @@
 
 #include "graphADT.h"
 
-typedef struct graph
-{
-    struct node * head[N];
-    
-}graph;
 
 
-typedef struct node {
-    int value;
-    struct node * next;
-}node;
+
 
 
 
