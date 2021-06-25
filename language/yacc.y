@@ -11,8 +11,11 @@ int yydebug = 1;
 enum types type;
 enum types value_type;
 int new_graph_vertex_num = 0;
+int temp_edges_qty = 0;
+struct g_edge * temp_edges = NULL;
+struct g_edge temp_edge;
 struct sym * last_sym = NULL;
-
+#define NODE_IN_RANGE(n,max) (n >= 0 && n < max)
 %}
 
 %union {
@@ -26,7 +29,7 @@ char * str;
 %type <val> e
 %token  DO WHILE  ARITHMETICAL_OPS ASSIGN_OP MULT_DIV_OPS AND OR NOT RELATIONAL_OPS  TYPE IF ELSE 
 %token  LETTER DECIMAL OPEN_PAR CLOSE_PAR OPEN_BRACKET CLOSE_BRACKET SEMICOLON ID ARROW DOUBLE_ARROW
-%token  GRAPH DFS BFS INT STRING W_GRAPH TREE D_GRAPH  CONS QUOTE 
+%token  GRAPH DFS BFS INT STRING W_GRAPH TREE D_GRAPH  CONS COMMA 
 %%
 
 program:  defs list ;
@@ -64,7 +67,7 @@ e:  e ARITHMETICAL_OPS t
     | VAR ASSIGN_OP VALUE {sym_table_look($1->name)->type == T_INTEGER ? $1->content.int_value = $3 : yyerror("Error al asignar int");}
     | VAR ASSIGN_OP  STRING_LITERAL  {
                                         if(sym_table_look($1->name)->type == T_STRING) {
-                                            int len = strlen($3) + 1; $1->content.string_value = malloc(len); 
+                                            int len = strlen($3) + 1; $1->content.string_value = malloc(len); //TODO FREEEEEEEEEE
                                             strcpy($1->content.string_value,$3);
                                             $1->content.string_value[len - 1] = 0;
                                             printf("STRING\n");
@@ -73,12 +76,33 @@ e:  e ARITHMETICAL_OPS t
                                         }
                                         
                                     }
-    | VAR ASSIGN_OP OPEN_BRACKET  CLOSE_BRACKET
+    | VAR ASSIGN_OP OPEN_BRACKET edges CLOSE_BRACKET{ struct sym * s = sym_table_look($1->name);
+
+                                                    if(s->type == T_GRAPH){
+                                                        int nqty = s->content.graph_data.nodes_qty;
+                                                        printf("inicializando grafito\n");
+                                                        for(int i = 0; i<temp_edges_qty;i++){
+                                                            if(NODE_IN_RANGE(temp_edges[i].from,nqty) && NODE_IN_RANGE(temp_edges[i].to,nqty)){
+                                                                // printf("Bien, de %d a %d\n",temp_edges[i].from,temp_edges[i].to);
+                                                                ;
+                                                            }else{
+                                                                yyerror("Index out of range");
+                                                                YYABORT;
+                                                            }    
+                                                        }
+                                                        // free(temp_edges);
+                                                        s->content.graph_data.edges_info = temp_edges;
+                                                        s->content.graph_data.edges_qty = temp_edges_qty;
+                                                        temp_edges = NULL;
+                                                        temp_edges_qty = 0;
+                                                    }
+
+                                                    }
     ;
 
 edges:
-        edges edge
-        | edge
+        edges edge {if (temp_edges == NULL) temp_edges = malloc(10*sizeof(struct g_edge));} 
+        | edge {if (temp_edges == NULL) temp_edges = malloc(10*sizeof(struct g_edge));}
         ;
 
 edge:   node_def
@@ -94,7 +118,7 @@ f:  VAR | VALUE ;
 defs:   defs def SEMICOLON | def SEMICOLON ;
 
 def:    type n 
-        | graph_type vertex_num n {type = T_GRAPH; printf("%d\n", new_graph_vertex_num);}
+        | graph_type vertex_num n {;}
         ;
 
 
@@ -137,7 +161,13 @@ w_node_defs:    w_node_def
             |   w_node_defs w_node_def
             ;
 
-node_def:   VALUE ARROW VALUE { printf("magia\n"); };
+node_def:   VALUE ARROW VALUE { printf("guardando edge\n");
+                                 if((temp_edges_qty % 10) == 0)
+                                    temp_edges = realloc(temp_edges,sizeof(temp_edges) + 10*sizeof(struct g_edge));
+                                
+                                 temp_edges[temp_edges_qty].from = $1;
+                                 temp_edges[temp_edges_qty++].to = $3;
+                                 }; 
 
 d_node_def: ID DOUBLE_ARROW ID 
         |   ID ARROW ID
@@ -181,6 +211,11 @@ struct sym * sym_table_look(char * s){
                     printf(" %d\n",st->content.int_value);
                 else if(st->type == T_STRING)
                     printf(" %s\n",st->content.string_value);
+                else if(st->type == T_GRAPH){
+                    printf("este es un grafo, tiene %d vertices\n",st->content.graph_data.nodes_qty);
+                    for(int i = 0; i< st->content.graph_data.edges_qty ; i++)
+                        printf("edge %d de %d a %d\n",i,st->content.graph_data.edges_info[i].from,st->content.graph_data.edges_info[i].to);
+                }
                                 
                 return st;
 
@@ -200,7 +235,11 @@ struct sym * sym_table_look(char * s){
                 printf("Guardamos en la tabla de simbolos la variable %s \n",st->name);
                 st->type = type;
                 if(type == T_GRAPH) {
+                    printf("es de tipo grafo\n");
+                    
+                    st->content.graph_data.nodes_qty = new_graph_vertex_num;
                     new_graph_vertex_num = 0;
+                
                     //TODO crear grafo
 
                 }
