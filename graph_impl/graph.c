@@ -2,6 +2,8 @@
 #include <assert.h>
 
 #include "graph.h"
+#include "queue.h"
+
 
 /* basic directed graph type */
 /* the implementation uses adjacency lists
@@ -168,4 +170,41 @@ graph_foreach(Graph g, int source,
     for(i = 0; i < g->alist[source]->d; i++) {
         f(g, source, g->alist[source]->list[i], data);
     }
+}
+
+
+
+
+
+void search_bfs(Graph g, int vertex){
+    Queue q = create_queue();
+    int n = graph_vertex_count(g);
+    int visited[n];
+    for (int i = 0; i < n; i++)
+    {
+        visited[i] = 0;
+    }
+    visited[vertex] = 1;
+    enqueue(q, vertex);
+
+    while (!is_empty(q))
+    {
+        int current = dequeue(q);
+        printf("Node: %d", current);
+        for (int i = 0; i < g->alist[current]->d; i++)
+        {
+            int adj = g->alist[current]->list[i];
+
+            if (visited[adj] == 0)
+            {
+                visited[adj] = 1;
+                enqueue(q, adj);
+            }            
+        }        
+    }
+    
+    
+    
+
+
 }

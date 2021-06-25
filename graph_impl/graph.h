@@ -28,3 +28,5 @@ int graph_has_edge(Graph, int source, int sink);
 void graph_foreach(Graph g, int source,
         void (*f)(Graph g, int source, int sink, void *data),
         void *data);
+
+void search_bfs(Graph g, int vertex);

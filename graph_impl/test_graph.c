@@ -53,6 +53,10 @@ main(int argc, char **argv)
         }
     }
 
+
+    /* test BFS */
+    search_bfs(g, 0);
+
     for(i = 0; i < TEST_SIZE; i++) {
         assert(graph_out_degree(g, i) == 1);
         graph_foreach(g, i, match_sink, &i);
