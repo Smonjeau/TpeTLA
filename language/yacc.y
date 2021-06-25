@@ -9,7 +9,10 @@ void yyerror(char *s);
 struct sym sym_table[MAX_SYMB];
 int yydebug = 1;
 enum types type;
+enum types value_type;
+int new_graph_vertex_num = 0;
 struct sym * last_sym = NULL;
+
 %}
 
 %union {
@@ -58,17 +61,28 @@ cond_or:    cond_log OR cond_log;
 
 e:  e ARITHMETICAL_OPS t
     | t 
-    | VAR ASSIGN_OP VALUE {$1->content.int_value = $3 ; printf("HOLA INTT\n");}
-    | VAR ASSIGN_OP  STRING_LITERAL  {int len = strlen($3) + 1; $1->content.string_value = malloc(len); 
-                                        strcpy($1->content.string_value,$3);
-                                        $1->content.string_value[len - 1] = 0;
-                                        printf("STRING\n");
+    | VAR ASSIGN_OP VALUE {sym_table_look($1->name)->type == T_INTEGER ? $1->content.int_value = $3 : yyerror("Error al asignar int");}
+    | VAR ASSIGN_OP  STRING_LITERAL  {
+                                        if(sym_table_look($1->name)->type == T_STRING) {
+                                            int len = strlen($3) + 1; $1->content.string_value = malloc(len); 
+                                            strcpy($1->content.string_value,$3);
+                                            $1->content.string_value[len - 1] = 0;
+                                            printf("STRING\n");
+                                        } else {
+                                            yyerror("Error al asignar string");
+                                        }
+                                        
                                     }
+    | VAR ASSIGN_OP OPEN_BRACKET  CLOSE_BRACKET
     ;
 
-edge:   ARROW
-        | DOUBLE_ARROW
-        | '-''('number ')''-''>'
+edges:
+        edges edge
+        | edge
+        ;
+
+edge:   node_def
+        //TODO agregar mas tipos de flechitas
         ;
 
 t:  t MULT_DIV_OPS f
@@ -80,9 +94,7 @@ f:  VAR | VALUE ;
 defs:   defs def SEMICOLON | def SEMICOLON ;
 
 def:    type n 
-        | GRAPH n ASSIGN_OP OPEN_BRACKET node_defs CLOSE_BRACKET
-        | D_GRAPH n ASSIGN_OP OPEN_BRACKET d_node_defs CLOSE_BRACKET
-        | W_GRAPH n ASSIGN_OP OPEN_BRACKET w_node_defs CLOSE_BRACKET
+        | graph_type vertex_num n {type = T_GRAPH; printf("%d\n", new_graph_vertex_num);}
         ;
 
 
@@ -95,9 +107,11 @@ gr_iter:    gr_iter_type OPEN_PAR n SEMICOLON n CLOSE_PAR s
         ;
 type: INT {type = T_INTEGER ;} | STRING {type = T_STRING;} ;
 
-n:  VAR;
+graph_type: GRAPH {type=T_GRAPH;} ;
 
-assign: VAR ASSIGN_OP VALUE {$1->value = $3; /*TODO OTROS TIPOS*/};
+vertex_num: OPEN_PAR VALUE CLOSE_PAR { new_graph_vertex_num = $2; };
+
+n:  VAR;
 
 
 text:   l text 
@@ -123,14 +137,13 @@ w_node_defs:    w_node_def
             |   w_node_defs w_node_def
             ;
 
-node_def:   ID ARROW ID ;
+node_def:   VALUE ARROW VALUE { printf("magia\n"); };
 
 d_node_def: ID DOUBLE_ARROW ID 
         |   ID ARROW ID
         ;
 
 w_node_def: ID '-' '>' '(' number '-' '>' ID ;
-
      
 %%
 
@@ -179,10 +192,18 @@ struct sym * sym_table_look(char * s){
                 if(type == NONE){
                     yyerror("Variable not found\n");
                     return st; //TODO SACAME
+                } else if(type == T_GRAPH && new_graph_vertex_num <= 0) {
+                    yyerror("Wrong vertex number\n");
+                    return st; //TODO SACAME
                 }
                 st->name = strdup(s);
                 printf("Guardamos en la tabla de simbolos la variable %s \n",st->name);
                 st->type = type;
+                if(type == T_GRAPH) {
+                    new_graph_vertex_num = 0;
+                    //TODO crear grafo
+
+                }
                 type = NONE;
                 return st;
             }
