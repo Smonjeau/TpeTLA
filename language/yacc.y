@@ -15,13 +15,15 @@ struct sym * last_sym = NULL;
 %union {
 int val;
 struct sym *symp;
+char * str;
 }
 %token <symp> VAR
-%token <val> VALUE 
-%type <val> def
+%token <val> VALUE
+%token <str> STRING_LITERAL
+%type <val> e
 %token  DO WHILE  ARITHMETICAL_OPS ASSIGN_OP MULT_DIV_OPS AND OR NOT RELATIONAL_OPS  TYPE IF ELSE 
 %token  LETTER DECIMAL OPEN_PAR CLOSE_PAR OPEN_BRACKET CLOSE_BRACKET SEMICOLON ID ARROW DOUBLE_ARROW
-%token  GRAPH DFS BFS INT STRING W_GRAPH TREE D_GRAPH  CONS
+%token  GRAPH DFS BFS INT STRING W_GRAPH TREE D_GRAPH  CONS QUOTE 
 %%
 
 program:  defs list ;
@@ -55,7 +57,13 @@ cond_and:   cond_log AND cond_log;
 cond_or:    cond_log OR cond_log;
 
 e:  e ARITHMETICAL_OPS t
-    | t
+    | t 
+    | VAR ASSIGN_OP VALUE {$1->content.int_value = $3 ; printf("HOLA INTT\n");}
+    | VAR ASSIGN_OP  STRING_LITERAL  {int len = strlen($3) + 1; $1->content.string_value = malloc(len); 
+                                        strcpy($1->content.string_value,$3);
+                                        $1->content.string_value[len - 1] = 0;
+                                        printf("STRING\n");
+                                    }
     ;
 
 edge:   ARROW
@@ -87,7 +95,7 @@ gr_iter:    gr_iter_type OPEN_PAR n SEMICOLON n CLOSE_PAR s
         ;
 type: INT {type = T_INTEGER ;} | STRING {type = T_STRING;} ;
 
-n:  VAR assign{printf("variable guardada\n"); last_sym = $1; printf("last_sym: %s\n", last_sym->name);} | VAR;
+n:  VAR;
 
 assign: VAR ASSIGN_OP VALUE {$1->value = $3; /*TODO OTROS TIPOS*/};
 
@@ -128,24 +136,11 @@ w_node_def: ID '-' '>' '(' number '-' '>' ID ;
 
 extern FILE * yyin;
 
-int main(int argc, char *argv[])
-{
-	/*
-    yyin = fopen("lex", "r");	
-	int i =0;
-	printf("args: %s\n",argv[1]);
-	printf("%p\n",yyin);
-	printf("while\n");
-	while(!feof(yyin)){
-		printf("%d\n",i++);
-		yyparse();
-	}
-	fclose(yyin);
-
-	*/
-	yyparse();
-  return 1;
-}
+int main(int argc, char *argv[]){
+	
+    yyparse();
+    return 1;
+ }
 void yyerror(s)
 char * s;
 {
@@ -168,7 +163,11 @@ struct sym * sym_table_look(char * s){
                         
                 }
                 
-                printf("Ya estaba en la tabla, el nombre es %s y el valor es %d\n",st->name, st->value);
+                printf("Ya estaba en la tabla, el nombre es %s y el valor es",st->name);
+                if(st->type == T_INTEGER)
+                    printf(" %d\n",st->content.int_value);
+                else if(st->type == T_STRING)
+                    printf(" %s\n",st->content.string_value);
                                 
                 return st;
 
@@ -182,7 +181,7 @@ struct sym * sym_table_look(char * s){
                     return st; //TODO SACAME
                 }
                 st->name = strdup(s);
-                printf("Guardamos en la tabla de simbolos la variable %s con value %d\n",st->name,st->value);
+                printf("Guardamos en la tabla de simbolos la variable %s \n",st->name);
                 st->type = type;
                 type = NONE;
                 return st;

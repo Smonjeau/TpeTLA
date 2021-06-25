@@ -11,8 +11,12 @@ enum types{
     T_TREE
     };
 struct sym{
-    char * name;
-    int value;
+    char * name; //nombre variable
+    union{
+        int int_value;
+        char * string_value;
+        //TODO grafitos
+    }content;
     enum types type;
 };
 

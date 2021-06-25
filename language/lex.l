@@ -1,7 +1,11 @@
+SP  (u8|u|U|L)
+ES  (\\(['"\?\\abfnrtv]|[0-7]{1,3}|x[a-fA-F0-9]+))
+WS  [ \t\v\n\f]
+
 %{
 #include "y.tab.h"
 #include "symbol_table.h"
-
+#include <stdlib.h>
 #define LOOKUP 0
 
 int state;
@@ -31,9 +35,12 @@ int state;
 "<->"   {return(DOUBLE_ARROW);}
 "int"	{return(INT);}
 "string"	{return(STRING);}
-[0-9]+	{return(VALUE);}
-[A-Za-z][A-Za-z0-9]*	{yylval.symp = sym_table_look(yytext); return(VAR);}
+\"			{return(QUOTE);}
+[0-9]+	{yylval.val = atoi(yytext) ; return(VALUE);}
+[A-Za-z_][A-Za-z_0-9]*	{yylval.symp = sym_table_look(yytext); return(VAR);}
+({SP}?\"([^"\\\n]|{ES})*\"{WS}*)+ {yylval.str = strdup(yytext) ;return(STRING_LITERAL);}
 [a-zA-z]	{return(LETTER);}
 %%
 
 
+ 
