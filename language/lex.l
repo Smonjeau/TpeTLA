@@ -35,10 +35,10 @@ int state;
 "<->"   {return(DOUBLE_ARROW);}
 "int"	{return(INT);}
 "string"	{return(STRING);}
-\"			{return(QUOTE);}
+"graph" {return(GRAPH);}
 [0-9]+	{yylval.val = atoi(yytext) ; return(VALUE);}
 [A-Za-z_][A-Za-z_0-9]*	{yylval.symp = sym_table_look(yytext); return(VAR);}
-({SP}?\"([^"\\\n]|{ES})*\"{WS}*)+ {yylval.str = strdup(yytext) ;return(STRING_LITERAL);}
+({SP}?\"([^"\\\n]|{ES})*\"{WS}*)+ {yylval.str = strdup(yytext); return(STRING_LITERAL);}
 [a-zA-z]	{return(LETTER);}
 %%
 
