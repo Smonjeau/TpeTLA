@@ -5,7 +5,6 @@
 #define LOOKUP 0
 
 int state;
-
 %}
 
 %%
@@ -38,48 +37,3 @@ int state;
 %%
 
 
-
-struct word{
-	char * word_name;
-	int word_type;
-	struct word * next;
-};
-
-struct word * word_list;
-
-extern void * malloc();
-
-int add_word(int type, char * word){	
-
-	struct word * wp;
-	if(lookup_word(word) != LOOKUP) {
-		printf("!!! warning: word %s already defined \n", word);
-		return 0;
-	}
-	wp = (struct word *) malloc (sizeof (struct word) ) ;
-
-	if(!wp)
-		printf("null\n");
-	
-	wp->next = word_list;
-	wp->word_name = (char *) malloc (strlen (word) +1) ;
-	if(!wp->word_name)
-		printf("null 2 \n");
-	strcpy (wp->word_name, word) ;
-	wp->word_type = type;
-	word_list = wp;
-	return 1; 
-}
-
-int lookup_word(char  * word){
-	
-	struct word * wp  = word_list;
-	
-	for(;wp;wp=wp->next){
-		if(strcmp(wp->word_name,word) == 0)
-			return wp->word_type;
-
-	}
-	return LOOKUP;
-}
- 

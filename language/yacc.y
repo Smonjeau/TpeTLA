@@ -3,10 +3,13 @@
 #include <stdio.h>
 #include "symbol_table.h"
 #include <string.h>
+#include <stdlib.h>
 int yylex();
 void yyerror(char *s);
 struct sym sym_table[MAX_SYMB];
 int yydebug = 1;
+enum types type;
+struct sym * last_sym = NULL;
 %}
 
 %union {
@@ -15,20 +18,21 @@ struct sym *symp;
 }
 %token <symp> VAR
 %token <val> VALUE 
-
+%type <val> def
 %token  DO WHILE  ARITHMETICAL_OPS ASSIGN_OP MULT_DIV_OPS AND OR NOT RELATIONAL_OPS  TYPE IF ELSE 
 %token  LETTER DECIMAL OPEN_PAR CLOSE_PAR OPEN_BRACKET CLOSE_BRACKET SEMICOLON ID ARROW DOUBLE_ARROW
 %token  GRAPH DFS BFS INT STRING W_GRAPH TREE D_GRAPH  CONS
 %%
 
-program:  defs list {;};
+program:  defs list ;
 
 
 list: s
 	| list s
+        
 	;
 
-s:	e SEMICOLON
+s:	e SEMICOLON 
 	| while
     | do_while
     | gr_iter
@@ -44,7 +48,7 @@ condition:  cond_log
     | cond_and 
     | cond_or
     ;
-cond_log:   e RELATIONAL_OPS e;
+cond_log:   e RELATIONAL_OPS e ;
 
 cond_and:   cond_log AND cond_log;
 
@@ -65,14 +69,15 @@ t:  t MULT_DIV_OPS f
 
 f:  VAR | VALUE ;
 
-defs:   defs def | def ;
+defs:   defs def SEMICOLON | def SEMICOLON ;
 
-def:    type n ';'
+def:    type n 
         | GRAPH n ASSIGN_OP OPEN_BRACKET node_defs CLOSE_BRACKET
         | D_GRAPH n ASSIGN_OP OPEN_BRACKET d_node_defs CLOSE_BRACKET
         | W_GRAPH n ASSIGN_OP OPEN_BRACKET w_node_defs CLOSE_BRACKET
-        {printf("hola\n");}
         ;
+
+
 
 gr_iter_type: DFS | BFS ;
 
@@ -80,9 +85,12 @@ gr_iter:    gr_iter_type OPEN_PAR n SEMICOLON n CLOSE_PAR s
         |   gr_iter_type OPEN_PAR n SEMICOLON n CLOSE_PAR OPEN_BRACKET list CLOSE_BRACKET
 
         ;
-type: INT | STRING ;
+type: INT {type = T_INTEGER ;} | STRING {type = T_STRING;} ;
 
-n:  VAR ;
+n:  VAR assign{printf("variable guardada\n"); last_sym = $1; printf("last_sym: %s\n", last_sym->name);} | VAR;
+
+assign: VAR ASSIGN_OP VALUE {$1->value = $3; /*TODO OTROS TIPOS*/};
+
 
 text:   l text 
         | d text
@@ -145,20 +153,41 @@ char * s;
 }
 
 struct sym * sym_table_look(char * s){
-        char * p;
-        struct sym * st;
-        int i;
-        for(i=0;i<MAX_SYMB;i++){
-                //ya definido
-                st = &sym_table[i];
-                if(st->name && !strcmp(st->name,s))
-                        return st;
-
-        
-                if(!st->name){
-                        st->name = strdup(s);
-                        return st;
+    char * p;
+    struct sym * st;
+    int i;
+    for(i=0;i<MAX_SYMB;i++){
+            //ya definido
+            st = &sym_table[i];
+            if(st->name && !strcmp(st->name,s)){
+                
+                if(type != NONE){
+                        yyerror("Redefine variable\n");
+                        type = NONE;
+                        return st; //TODO SACAME
+                        
                 }
-        }
-        yyerror("Limit of symbs reached\n");
+                
+                printf("Ya estaba en la tabla, el nombre es %s y el valor es %d\n",st->name, st->value);
+                                
+                return st;
+
+            }
+
+
+            if(!st->name){
+                
+                if(type == NONE){
+                    yyerror("Variable not found\n");
+                    return st; //TODO SACAME
+                }
+                st->name = strdup(s);
+                printf("Guardamos en la tabla de simbolos la variable %s con value %d\n",st->name,st->value);
+                st->type = type;
+                type = NONE;
+                return st;
+            }
+    }
+    type = NONE;
+    yyerror("Limit of symbs reached\n");
 }
