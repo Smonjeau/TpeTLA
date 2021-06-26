@@ -40,8 +40,10 @@ int state;
 "string"	{return(STRING);}
 "graph" {return(GRAPH);}
 "," {return (COMMA);}
+"print" {return (PRINT);}
+"read" {return (READ);}
 
-[0-9]+	{yylval.val = atoi(yytext) ; return(VALUE);}
+-?[0-9]+	{yylval.val = atoi(yytext) ; return(VALUE);}
 [A-Za-z_][A-Za-z_0-9]*	{yylval.symp = sym_table_look(yytext); return(VAR);}
 ({SP}?\"([^"\\\n]|{ES})*\"{WS}*)+ {yylval.str = strdup(yytext); return(STRING_LITERAL);}
 [a-zA-z]	{return(LETTER);}

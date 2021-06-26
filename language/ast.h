@@ -8,8 +8,9 @@ enum node_type{
     DEFS_NODE,
     DEF_NODE,
     TYPE_NODE,
-    VAR_NODE
-
+    VAR_NODE,
+    PRINT_NODE,
+    LIST_NODE
 
 };
 

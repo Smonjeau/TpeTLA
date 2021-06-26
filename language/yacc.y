@@ -34,14 +34,15 @@ struct ast_node  * ast;
 %type <val> e
 %token  DO WHILE  ARITHMETICAL_OPS ASSIGN_OP MULT_DIV_OPS AND OR NOT RELATIONAL_OPS  TYPE IF ELSE 
 %token  LETTER DECIMAL OPEN_PAR CLOSE_PAR OPEN_BRACKET CLOSE_BRACKET SEMICOLON ID ARROW DOUBLE_ARROW
-%token  GRAPH DFS BFS INT STRING W_GRAPH TREE D_GRAPH  CONS COMMA HYPHEN
+%token  GRAPH DFS BFS INT STRING W_GRAPH TREE D_GRAPH  CONS COMMA HYPHEN PRINT READ
+
 %%
 
 program:  defs list {root =  add_node(PROGRAM_NODE, $1, $2, NULL);} ;
 
 
-list: s {$$ = NULL;}
-	| list s { $$ = NULL;}
+list: s {$$ = add_node(LIST_NODE, $1, NULL, NULL);}
+	| list s { $$ = add_node(LIST_NODE, $2, $1, NULL);}
         
 	;
 
@@ -49,7 +50,17 @@ s:	e SEMICOLON
 	| while
     | do_while
     | gr_iter
+    | print { $$ = $1; }
+    | read
     ;
+
+print: PRINT OPEN_PAR n CLOSE_PAR SEMICOLON {
+        add_node(PRINT_NODE, $3, NULL, NULL);}
+        ;
+
+read: READ OPEN_PAR n CLOSE_PAR SEMICOLON {printf("read en %s\n",(char*)$3->data);}
+        ;
+
 while:     WHILE OPEN_PAR condition CLOSE_PAR s
         |  WHILE OPEN_PAR condition CLOSE_PAR OPEN_BRACKET list CLOSE_BRACKET
         ;
@@ -218,8 +229,30 @@ void free_resources(){
 }
 
 void decode_tree(ast_node * node, FILE * c_out) {
+    /*if(node->right != NULL)
+            decode_tree(node->right, c_out);
+    if(node->left != NULL){
+        enum node_type t = node->left->type;
 
-    
+        char * var_name = (char *) node->left->right->data;
+        struct sym * read_sym;
+        switch(t) {
+            case T_GRAPH:
+                read_sym = sym_table_look(var_name); //TODO chequear
+                fprintf(c_out, "Graph %s;%s=graph_create(%d);", var_name, var_name, read_sym->content.graph_data.nodes_qty);
+
+                break;
+            case T_INTEGER:
+                fprintf(c_out, "int %s;", var_name);
+                break;
+            case T_STRING:
+                fprintf(c_out, "char * %s;", var_name);
+                break;
+        }
+        free(node->left->left->data);
+        free(var_name);       
+
+    }*/
 }
 
 void decode_defs(ast_node * node, FILE * c_out) {
@@ -272,7 +305,8 @@ int main(int argc, char *argv[]){
             exit(1);
         }
 
-        fputs("#include \"graph.h\"\n", c_out);
+        fputs("#include \"graph_impl/graph.h\"\n", c_out);
+        fputs("#include <stdio.h>\n", c_out);
         fputs("int main() {", c_out);
 
 
@@ -280,13 +314,18 @@ int main(int argc, char *argv[]){
             decode_defs(root->left, c_out);
         }
         if(root->right != NULL)
-            decode_tree(root->right, c_out);//printf("OK, null a derecha\n");
-        
+            decode_tree(root->right, c_out);
 
         fputs("return 0;}", c_out);
         fclose(c_out);
+
     }
     free_resources();
+
+    system("gcc graph_impl/queue.c graph_impl/graph.c intermediate.c -o runme");
+
+    if(remove("intermediate.c") != 0)
+        fprintf(stderr, "Error when trying to remove intermediate.c\n");
     return 1;
  }
 void yyerror(s)
