@@ -29,7 +29,7 @@ char * str;
 %type <val> e
 %token  DO WHILE  ARITHMETICAL_OPS ASSIGN_OP MULT_DIV_OPS AND OR NOT RELATIONAL_OPS  TYPE IF ELSE 
 %token  LETTER DECIMAL OPEN_PAR CLOSE_PAR OPEN_BRACKET CLOSE_BRACKET SEMICOLON ID ARROW DOUBLE_ARROW
-%token  GRAPH DFS BFS INT STRING W_GRAPH TREE D_GRAPH  CONS COMMA 
+%token  GRAPH DFS BFS INT STRING W_GRAPH TREE D_GRAPH  CONS COMMA HYPHEN
 %%
 
 program:  defs list ;
@@ -107,6 +107,7 @@ edges:
 
 edge:   node_def
         //TODO agregar mas tipos de flechitas
+        | w_node_def
         ;
 
 t:  t MULT_DIV_OPS f
@@ -173,7 +174,17 @@ d_node_def: ID DOUBLE_ARROW ID
         |   ID ARROW ID
         ;
 
-w_node_def: ID '-' '>' '(' number '-' '>' ID ;
+w_node_def: VALUE HYPHEN OPEN_PAR VALUE CLOSE_PAR ARROW VALUE {
+                                if((temp_edges_qty % 10) == 0){
+                                    temp_edges = realloc(temp_edges,sizeof(temp_edges) + 10*sizeof(struct g_edge));
+                                
+                                temp_edges[temp_edges_qty].from = $1;
+                                temp_edges[temp_edges_qty].to = $7;
+                                temp_edges[temp_edges_qty++].weight = $4;
+
+                                }  
+                                }
+ ; //TODO me da cosita
      
 %%
 
@@ -214,7 +225,7 @@ struct sym * sym_table_look(char * s){
                 else if(st->type == T_GRAPH){
                     printf("este es un grafo, tiene %d vertices\n",st->content.graph_data.nodes_qty);
                     for(int i = 0; i< st->content.graph_data.edges_qty ; i++)
-                        printf("edge %d de %d a %d\n",i,st->content.graph_data.edges_info[i].from,st->content.graph_data.edges_info[i].to);
+                        printf("edge %d de %d a %d con peso %d\n",i,st->content.graph_data.edges_info[i].from,st->content.graph_data.edges_info[i].to,st->content.graph_data.edges_info[i].weight);
                 }
                                 
                 return st;

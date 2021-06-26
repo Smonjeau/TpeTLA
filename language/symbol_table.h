@@ -16,6 +16,7 @@ enum types{
 struct g_edge{
     int from;
     int to;
+    int weight;
 };
 
 struct graph_sym{

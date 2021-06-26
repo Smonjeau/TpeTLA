@@ -22,12 +22,12 @@ int state;
 "if"    {return(IF);   }
 "else"   {return(ELSE);   }
 "="	{return(ASSIGN_OP);}
-
 ";"	{return(SEMICOLON);}
 "("	{return(OPEN_PAR);}
 ")"	{return(CLOSE_PAR);}
 "{"	{return(OPEN_BRACKET);}
 "}"	{return(CLOSE_BRACKET);}
+"-"	{return(HYPHEN);}
 "and" | "or" | "not" {return(LOGICAL_OPS);}
 "+" |  "-"      {return(ARITHMETICAL_OPS);}
 "<" | "<=" | ">" | ">=" | "==" | "!=" {return(RELATIONAL_OPS);}
@@ -36,6 +36,7 @@ int state;
 "int"	{return(INT);}
 "string"	{return(STRING);}
 "graph" {return(GRAPH);}
+
 [0-9]+	{yylval.val = atoi(yytext) ; return(VALUE);}
 [A-Za-z_][A-Za-z_0-9]*	{yylval.symp = sym_table_look(yytext); return(VAR);}
 ({SP}?\"([^"\\\n]|{ES})*\"{WS}*)+ {yylval.str = strdup(yytext); return(STRING_LITERAL);}
