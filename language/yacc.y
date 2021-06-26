@@ -217,6 +217,37 @@ void free_resources(){
     }
 }
 
+void decode_tree(ast_node * node, FILE * c_out) {
+
+    
+}
+
+void decode_defs(ast_node * node, FILE * c_out) {
+    if(node->right != NULL)
+            decode_defs(node->right, c_out);
+    if(node->left != NULL && node->left->type == DEF_NODE ){
+        enum types t = *((int *) node->left->left->data);
+        char * var_name = (char *) node->left->right->data;
+        struct sym * read_sym;
+        switch(t) {
+            case T_GRAPH:
+                read_sym = sym_table_look(var_name); //TODO chequear
+                fprintf(c_out, "Graph %s;%s=graph_create(%d);", var_name, var_name, read_sym->content.graph_data.nodes_qty);
+
+                break;
+            case T_INTEGER:
+                fprintf(c_out, "int %s;", var_name);
+                break;
+            case T_STRING:
+                fprintf(c_out, "char * %s;", var_name);
+                break;
+        }
+        free(node->left->left->data);
+        free(var_name);       
+
+    }
+}
+
 int main(int argc, char *argv[]){
 	
     ast_node * nodito;
@@ -233,25 +264,27 @@ int main(int argc, char *argv[]){
             yyparse();
     }
 
-    printf("m boi\n");
+    printf("Fin del parsing\n");
     if(root !=NULL){
-        printf("NODITO NO ES NULL\n");
-        if(root->right == NULL)
-            printf("OK, null a derecha\n");
-        if(root->left != NULL){
-            printf("Okardo - left no es null\n");
-            ast_node * aux = root->left;
-            if(aux->left != NULL && aux->left->type == DEF_NODE ){
-                printf("Buenardo - es node def\n");
-                enum types t = *((int *) aux->left->left->data);
-                if (t == T_GRAPH)
-                    printf("ESPECTACULAR\n");
-                else
-                    printf("%d --- %s\n",t,(char*)aux->left->right->data);
-            }
-            if(aux->right != NULL && aux->right->type == DEFS_NODE)
-                printf("Buenardo -- a derecha hay un node defs\n"); 
+        FILE * c_out = fopen("intermediate.c", "w+");
+        if(c_out == NULL) {
+            fprintf(stderr, "Unable to open intermediate.c file\n");
+            exit(1);
         }
+
+        fputs("#include \"graph.h\"\n", c_out);
+        fputs("int main() {", c_out);
+
+
+        if(root->left != NULL){
+            decode_defs(root->left, c_out);
+        }
+        if(root->right != NULL)
+            decode_tree(root->right, c_out);//printf("OK, null a derecha\n");
+        
+
+        fputs("return 0;}", c_out);
+        fclose(c_out);
     }
     free_resources();
     return 1;
