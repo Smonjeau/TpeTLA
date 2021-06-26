@@ -20,8 +20,6 @@ int state;
 "do"  { return(DO); }
 "while"   { return(WHILE); }
 "if"    {return(IF);   }
-"else"   {return(ELSE);   }
-"$"	{return 0;}
 "="	{return(ASSIGN_OP);}
 ";"	{return(SEMICOLON);}
 "("	{return(OPEN_PAR);}
@@ -40,7 +38,7 @@ int state;
 "," {return (COMMA);}
 
 [0-9]+	{yylval.val = atoi(yytext) ; return(VALUE);}
-[A-Za-z_][A-Za-z_0-9]*	{yylval.symp = sym_table_look(yytext); return(VAR);}
+[A-Za-z_][A-Za-z_0-9]*	{yylval.str = strdup(yytext); return(VAR);}
 ({SP}?\"([^"\\\n]|{ES})*\"{WS}*)+ {yylval.str = strdup(yytext); return(STRING_LITERAL);}
 [a-zA-z]	{return(LETTER);}
 %%

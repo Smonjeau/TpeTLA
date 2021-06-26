@@ -3,16 +3,6 @@
 
 #define MAX_SYMB 1024
 
-enum types{
-    NONE = 0,
-    T_INTEGER,
-    T_STRING,
-    T_GRAPH,
-    T_TREE
-    };
-
-
-
 struct g_edge{
     int from;
     int to;
@@ -31,9 +21,7 @@ struct sym{
         char * string_value;
         struct graph_sym graph_data;
     }content;
-    enum types type;
+    int type;
 };
 
-
-struct sym * sym_table_look(char * s);
 #endif
