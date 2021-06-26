@@ -102,7 +102,7 @@ e:  e ARITHMETICAL_OPS t
     ;
 
 edges:
-        edges edge {if (temp_edges == NULL) temp_edges = malloc(10*sizeof(struct g_edge));} 
+        edges COMMA edge {if (temp_edges == NULL) temp_edges = malloc(10*sizeof(struct g_edge));} 
         | edge {if (temp_edges == NULL) temp_edges = malloc(10*sizeof(struct g_edge));}
         ;
 
@@ -164,11 +164,13 @@ w_node_defs:    w_node_def
             ;
 
 node_def:   VALUE ARROW VALUE { printf("guardando edge\n");
+
                                  if((temp_edges_qty % 10) == 0)
                                     temp_edges = realloc(temp_edges,sizeof(temp_edges) + 10*sizeof(struct g_edge));
                                 
                                  temp_edges[temp_edges_qty].from = $1;
                                  temp_edges[temp_edges_qty++].to = $3;
+                                 printf("Nuevo edges qty: %d\n", temp_edges_qty);
                                  }; 
 
 d_node_def: ID DOUBLE_ARROW ID 
@@ -176,14 +178,16 @@ d_node_def: ID DOUBLE_ARROW ID
         ;
 
 w_node_def: VALUE HYPHEN OPEN_PAR VALUE CLOSE_PAR ARROW VALUE {
-                                if((temp_edges_qty % 10) == 0){
+                                printf("guardando edge con peso\n");
+                                if((temp_edges_qty % 10) == 0)
                                     temp_edges = realloc(temp_edges,sizeof(temp_edges) + 10*sizeof(struct g_edge));
                                 
                                 temp_edges[temp_edges_qty].from = $1;
                                 temp_edges[temp_edges_qty].to = $7;
                                 temp_edges[temp_edges_qty++].weight = $4;
+                                printf("Nuevo edges qty: %d\n", temp_edges_qty);
 
-                                }  
+                                
                                 }
  ; //TODO me da cosita
      
