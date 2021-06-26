@@ -4,6 +4,7 @@
 #include "symbol_table.h"
 #include <string.h>
 #include <stdlib.h>
+#include "ast.h"
 int yylex();
 void yyerror(char *s);
 struct sym sym_table[MAX_SYMB];
@@ -16,6 +17,7 @@ struct g_edge * temp_edges = NULL;
 struct g_edge temp_edge;
 struct sym * last_sym = NULL;
 int syms_counter = 0;
+ast_node * root;
 #define NODE_IN_RANGE(n,max) (n >= 0 && n < max)
 %}
 
@@ -23,7 +25,9 @@ int syms_counter = 0;
 int val;
 struct sym *symp;
 char * str;
+struct ast_node  * ast;
 }
+%type <ast> program defs list def type graph_type n
 %token <symp> VAR
 %token <val> VALUE
 %token <str> STRING_LITERAL
@@ -33,11 +37,11 @@ char * str;
 %token  GRAPH DFS BFS INT STRING W_GRAPH TREE D_GRAPH  CONS COMMA HYPHEN
 %%
 
-program:  defs list ;
+program:  defs list {root =  add_node(PROGRAM_NODE, $1, $2, NULL);} ;
 
 
-list: s
-	| list s
+list: s {$$ = NULL;}
+	| list s { $$ = NULL;}
         
 	;
 
@@ -117,10 +121,10 @@ t:  t MULT_DIV_OPS f
 
 f:  VAR | VALUE ;
 
-defs:   defs def SEMICOLON | def SEMICOLON ;
+defs:   defs def SEMICOLON {$$ = add_node(DEFS_NODE,$2,$1,NULL);}| def SEMICOLON {$$ = add_node(DEFS_NODE,$1,NULL,NULL);};
 
-def:    type n 
-        | graph_type vertex_num n {;}
+def:    type n {$$ = add_node(DEF_NODE,$1,$2,NULL);}
+        | graph_type vertex_num n {$$ = add_node(DEF_NODE,$1,$3,NULL);}
         ;
 
 
@@ -131,13 +135,15 @@ gr_iter:    gr_iter_type OPEN_PAR n SEMICOLON n CLOSE_PAR s
         |   gr_iter_type OPEN_PAR n SEMICOLON n CLOSE_PAR OPEN_BRACKET list CLOSE_BRACKET
 
         ;
-type: INT {type = T_INTEGER ;} | STRING {type = T_STRING;} ;
+type: INT {type = T_INTEGER ; enum types * aux = malloc(sizeof(int)); *aux= T_INTEGER; $$ = add_node(TYPE_NODE,NULL,NULL,aux);} |
+     STRING {type = T_STRING; enum types * aux = malloc(sizeof(int)); *aux= T_STRING; $$ = add_node(TYPE_NODE,NULL,NULL,aux);} 
+     ;
 
-graph_type: GRAPH {type=T_GRAPH;} ;
+graph_type: GRAPH {type=T_GRAPH; enum types * aux = malloc(sizeof(int)); *aux= T_GRAPH; $$ = add_node(TYPE_NODE,NULL,NULL,aux);} ;
 
 vertex_num: OPEN_PAR VALUE CLOSE_PAR { new_graph_vertex_num = $2; };
 
-n:  VAR;
+n:  VAR {char * aux = strdup($1->name); $$ = add_node(VAR_NODE,NULL,NULL,aux);};
 
 
 text:   l text 
@@ -213,11 +219,12 @@ void free_resources(){
 
 int main(int argc, char *argv[]){
 	
+    ast_node * nodito;
     if(argc == 2){
         //leemos del archivo
         yyin = fopen(argv[1],"r");
         while(!feof(yyin))
-            yyparse();
+             yyparse();
     
     }else if (argc == 1){
         //TODO esto ta roto
@@ -227,6 +234,25 @@ int main(int argc, char *argv[]){
     }
 
     printf("m boi\n");
+    if(root !=NULL){
+        printf("NODITO NO ES NULL\n");
+        if(root->right == NULL)
+            printf("OK, null a derecha\n");
+        if(root->left != NULL){
+            printf("Okardo - left no es null\n");
+            ast_node * aux = root->left;
+            if(aux->left != NULL && aux->left->type == DEF_NODE ){
+                printf("Buenardo - es node def\n");
+                enum types t = *((int *) aux->left->left->data);
+                if (t == T_GRAPH)
+                    printf("ESPECTACULAR\n");
+                else
+                    printf("%d --- %s\n",t,(char*)aux->left->right->data);
+            }
+            if(aux->right != NULL && aux->right->type == DEFS_NODE)
+                printf("Buenardo -- a derecha hay un node defs\n"); 
+        }
+    }
     free_resources();
     return 1;
  }

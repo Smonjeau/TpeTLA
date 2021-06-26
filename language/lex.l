@@ -6,6 +6,8 @@ WS  [ \t\v\n\f]
 #include "y.tab.h"
 #include "symbol_table.h"
 #include <stdlib.h>
+#include "ast.h"
+
 #define LOOKUP 0
 
 int state;
