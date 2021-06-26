@@ -1,0 +1,7 @@
+graph (10) g;
+string str;
+g = {0-(12)-> 5  2 -> 4};
+str = "pepitoooo";
+g;
+str;
+g;

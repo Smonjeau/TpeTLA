@@ -15,12 +15,13 @@ int state;
 
 \n	{ state = LOOKUP; }
 
-\.\n 	{ state = LOOKUP; return 0; }
+"$" 	{ return 0; }
 
 "do"  { return(DO); }
 "while"   { return(WHILE); }
 "if"    {return(IF);   }
 "else"   {return(ELSE);   }
+"$"	{return 0;}
 "="	{return(ASSIGN_OP);}
 ";"	{return(SEMICOLON);}
 "("	{return(OPEN_PAR);}

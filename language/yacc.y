@@ -15,6 +15,7 @@ int temp_edges_qty = 0;
 struct g_edge * temp_edges = NULL;
 struct g_edge temp_edge;
 struct sym * last_sym = NULL;
+int syms_counter = 0;
 #define NODE_IN_RANGE(n,max) (n >= 0 && n < max)
 %}
 
@@ -190,9 +191,39 @@ w_node_def: VALUE HYPHEN OPEN_PAR VALUE CLOSE_PAR ARROW VALUE {
 
 extern FILE * yyin;
 
+void free_resources(){
+    struct sym  st;
+
+    for (int i = 0 ; i < syms_counter ; i++){
+        st = sym_table[i];
+
+        free(st.name);
+        if(st.type == T_STRING && st.content.string_value != NULL)
+            free(st.content.string_value);
+        else if(st.type == T_GRAPH){
+            if (st.content.graph_data.edges_info != NULL)
+                free(st.content.graph_data.edges_info);
+        }
+    }
+}
+
 int main(int argc, char *argv[]){
 	
-    yyparse();
+    if(argc == 2){
+        //leemos del archivo
+        yyin = fopen(argv[1],"r");
+        while(!feof(yyin))
+            yyparse();
+    
+    }else if (argc == 1){
+        //TODO esto ta roto
+        //leemos d stdin
+        // while(getchar() != EOF)
+            yyparse();
+    }
+
+    printf("m boi\n");
+    free_resources();
     return 1;
  }
 void yyerror(s)
@@ -242,6 +273,7 @@ struct sym * sym_table_look(char * s){
                     yyerror("Wrong vertex number\n");
                     return st; //TODO SACAME
                 }
+                syms_counter++;
                 st->name = strdup(s);
                 printf("Guardamos en la tabla de simbolos la variable %s \n",st->name);
                 st->type = type;
