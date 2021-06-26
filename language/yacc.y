@@ -3,6 +3,8 @@
 #include <stdio.h>
 #include "symbol_table.h"
 #include "operation.h"
+#include "statement.h"
+#include "variable.h"
 #include <string.h>
 #include <stdlib.h>
 
@@ -22,18 +24,25 @@ struct sym * last_sym = NULL;
 int val;
 enum operators * operator;
 struct operation *operation;
+struct statement * statement;
+struct variable * variable;
+enum data_type type;
 struct sym *symp;
 char * str;
 }
+%type <operation> expression
 %type <operation> operation
-%type <val> e
-%type <val> t
+%type <statement> definition
+%type <statement> assignment
+%type <variable> n
+%type <type> type
+%type <statement> e
+%type <operation> t
 
-%token <symp> VAR
+%token <str> VAR
 %token <val> VALUE
 %token <str> STRING_LITERAL
-%token <operator> ARITHMETICAL_OPS
-%token <operator> MULT_DIV_OPS
+%token PLUS MINUS MULT DIV
 %token  DO WHILE ASSIGN_OP AND OR NOT RELATIONAL_OPS  TYPE IF ELSE 
 %token  LETTER DECIMAL OPEN_PAR CLOSE_PAR OPEN_BRACKET CLOSE_BRACKET SEMICOLON ID ARROW DOUBLE_ARROW
 %token  GRAPH DFS BFS INT STRING W_GRAPH TREE D_GRAPH  CONS QUOTE 
@@ -47,84 +56,65 @@ list: s
 	| list s
 	;
 
-s:	e SEMICOLON 
-	| while
-    | do_while
-    | gr_iter
+s:	    e SEMICOLON
+    |   while
+    |   do_while
+    |   gr_iter
     ;
-while:     WHILE OPEN_PAR condition CLOSE_PAR s
-        |  WHILE OPEN_PAR condition CLOSE_PAR OPEN_BRACKET list CLOSE_BRACKET
-        ;
-do_while:   DO s WHILE OPEN_PAR condition CLOSE_PAR
-    |       DO s WHILE OPEN_PAR condition CLOSE_PAR OPEN_BRACKET list CLOSE_BRACKET
+e:      definition
+    |   assignment
     ;
 
-condition:  cond_log 
-    | cond_and 
-    | cond_or
-    ;
-cond_log:   e RELATIONAL_OPS e ;
+defs:   defs definition SEMICOLON | definition SEMICOLON ;
 
-cond_and:   cond_log AND cond_log;
+definition:     type n 
+                    {$$ = create_definition($1, $2); }
+            |   graph_type vertex_num n {type = T_GRAPH; printf("%d\n", new_graph_vertex_num);}
+            ;
 
-cond_or:    cond_log OR cond_log;
 
-e:  VAR ASSIGN_OP operation {sym_table_look($1->name)->type == T_INTEGER ? $1->content.int_value = $3 : yyerror("Error al asignar int");}
-    | VAR ASSIGN_OP  STRING_LITERAL  {
-                                        if(sym_table_look($1->name)->type == T_STRING) {
-                                            int len = strlen($3) + 1; $1->content.string_value = malloc(len); 
-                                            strcpy($1->content.string_value,$3);
-                                            $1->content.string_value[len - 1] = 0;
-                                            printf("STRING\n");
-                                        } else {
-                                            yyerror("Error al asignar string");
-                                        }
+type: INT {$$ = T_INTEGER ;} | STRING {$$ = T_STRING;} ;
+
+
+assignment:     n ASSIGN_OP expression 
+                        {$$ = create_assignment($1, $3); }
+            |   n ASSIGN_OP  STRING_LITERAL  {
+                                                    if(sym_table_look($1->name)->type == T_STRING) {
+                                                    int len = strlen($3) + 1; $1->content.string_value = malloc(len); 
+                                                    strcpy($1->content.string_value,$3);
+                                                    $1->content.string_value[len - 1] = 0;
+                                                    printf("STRING\n");
+                                                } else {
+                                                    yyerror("Error al asignar string");
+                                                }
                                         
                                     }
-    | VAR ASSIGN_OP OPEN_BRACKET CLOSE_BRACKET
-    ;
+            |   VAR ASSIGN_OP OPEN_BRACKET CLOSE_BRACKET
+            ;
 
-operation: operation ARITHMETICAL_OPS operation {$$ = create_operation(operator_look($2), $1, $2);}
+expression:     operation
+            |   t
+            ;
+operation:      expression PLUS     expression {$$ = create_operation(OP_SUM, $1, $3);}
+           |    expression MINUS    expression {$$ = create_operation(OP_MINUS, $1, $3);}
+           |    expression MULT     expression {$$ = create_operation(OP_MULT, $1, $3);}
+           |    expression DIV      expression {$$ = create_operation(OP_DIV, $1, $3);}
            | t                                       
            ;
             
-
-edges:
-        edges edge
-        | edge
-        ;
-
-edge:   node_def
-        //TODO agregar mas tipos de flechitas
-        ;
-
-t:  t MULT_DIV_OPS t    {$$ = create_operation(operator_look($2), $1, $2);}
-        | f
-        ;
-
-f:  VAR | VALUE ;
-
-defs:   defs def SEMICOLON | def SEMICOLON ;
-
-def:    type n 
-        | graph_type vertex_num n {type = T_GRAPH; printf("%d\n", new_graph_vertex_num);}
-        ;
+t:      VAR {$$ = create_op($1);}
+    |   OPEN_PAR expression CLOSE_PAR   {$$ = create_operation(PARENTHESIS $2, NULL); }
+    |   VALUE {$$ = create_op($1);}
+    ;
 
 
 
-gr_iter_type: DFS | BFS ;
-
-gr_iter:    gr_iter_type OPEN_PAR n SEMICOLON n CLOSE_PAR s
-        |   gr_iter_type OPEN_PAR n SEMICOLON n CLOSE_PAR OPEN_BRACKET list CLOSE_BRACKET
-
-        ;
-type: INT {type = T_INTEGER ;} | STRING {type = T_STRING;} ;
 
 graph_type: GRAPH {type=T_GRAPH;} ;
 
 vertex_num: OPEN_PAR VALUE CLOSE_PAR { new_graph_vertex_num = $2; };
 
-n:  VAR;
+n:  VAR     {$$ = create_variable($1)};
 
 
 text:   l text 

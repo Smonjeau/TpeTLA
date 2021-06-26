@@ -29,6 +29,7 @@ struct operation * create_operation(enum operators type, struct operation * op1,
     struct operation * ret = malloc(sizeof(struct operation));
     *ret = (struct operation)
     {
+        .is_variable = 0,
         .op1 = op1,
         .op2 = op2,
         .op_type = type
@@ -36,4 +37,14 @@ struct operation * create_operation(enum operators type, struct operation * op1,
  
     return ret;
     
+}
+
+struct operation * create_op(char * v){
+    struct operation * ret = malloc(sizeof(struct operation));
+    *ret = (struct operation)
+    {
+        .is_variable = 1,
+        .value = v,
+    };
+    return ret;
 }
