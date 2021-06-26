@@ -7,6 +7,12 @@ enum operators {
     OP_MINUS,
     OP_DIV,
     OP_MULT,
+    COND_EQ,
+    COND_NE,
+    COND_LOWER,
+    COND_LOWER_EQ,
+    COND_GREATER,
+    COND_GREATER_EQ,
     PARENTHESIS
 };
 struct operation{

@@ -25,15 +25,26 @@ int val;
 enum operators * operator;
 struct operation *operation;
 struct statement * statement;
+struct condition * condition;
 struct variable * variable;
 enum data_type type;
 struct sym *symp;
 char * str;
 }
+
 %type <operation> expression
 %type <operation> operation
+%type <statement> list
+%type <statement> s
 %type <statement> definition
 %type <statement> assignment
+%type <statement> if
+%type <statement> do_while
+%type <statement> while
+%type <operation> condition
+%type <operation> cond_log
+%type <operation> cond_or
+%type <operation> cond_and
 %type <variable> n
 %type <type> type
 %type <statement> e
@@ -43,7 +54,8 @@ char * str;
 %token <val> VALUE
 %token <str> STRING_LITERAL
 %token PLUS MINUS MULT DIV
-%token  DO WHILE ASSIGN_OP AND OR NOT RELATIONAL_OPS  TYPE IF ELSE 
+%token WHILE DO IF
+%token  ASSIGN_OP AND OR NOT RELATIONAL_OPS TYPE 
 %token  LETTER DECIMAL OPEN_PAR CLOSE_PAR OPEN_BRACKET CLOSE_BRACKET SEMICOLON ID ARROW DOUBLE_ARROW
 %token  GRAPH DFS BFS INT STRING W_GRAPH TREE D_GRAPH  CONS QUOTE 
 
@@ -59,11 +71,39 @@ list: s
 s:	    e SEMICOLON
     |   while
     |   do_while
+    |   if
     |   gr_iter
     ;
+
+
 e:      definition
     |   assignment
     ;
+
+if:     IF OPEN_PAR condition CLOSE_PAR OPEN_BRACKET list CLOSE_BRACKET
+                {$$ = create_statement($3, $6, IF); }
+        ;
+while:     WHILE OPEN_PAR condition CLOSE_PAR OPEN_BRACKET list CLOSE_BRACKET
+                { $$ = create_statement($3,$6,WHILE); }
+        ;
+
+do_while:   DO OPEN_BRACKET list CLOSE_BRACKET WHILE OPEN_PAR condition CLOSE_PAR
+                { $$ = create_statement($3,$7,DO_WHILE); }
+    ;
+
+condition:  cond_log 
+    | cond_and 
+    | cond_or
+    | operation
+    ;
+    
+cond_log:   condition RELATIONAL_OPS condition  
+            ;
+
+cond_and:   cond_log AND cond_log;
+
+cond_or:    cond_log OR cond_log;
+
 
 defs:   defs definition SEMICOLON | definition SEMICOLON ;
 

@@ -26,3 +26,16 @@ statement * create_definition(int data_type, variable * v){
 
     return st;
 }
+
+statement * create_statement(struct condition * cond, struct statement * st, int type){
+    statement * statement = malloc(sizeof(statement));
+    statement_info * info = malloc(sizeof(statement_info));
+    info->condition = cond;
+    info->st = st;
+
+    statement->declaration_type = type; 
+    statement->value = info;
+
+    return statement;
+
+}

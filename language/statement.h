@@ -9,9 +9,20 @@ enum data_type{
 
 enum statement_type{
     ASSIGNMENT,
-    DEFINITION
+    DEFINITION,
+    WHILE,
+    DO_WHILE,
+    IF
 };
-
+/*
+typedef struct condition
+{
+    int is_boolean;          //Indica si la operacion es solo un bool
+    int condition_type;
+    struct condition * cond1, * cond2;
+    void * value;
+}condition;
+*/
 typedef struct statement {
     int declaration_type;
     void * value;
@@ -29,5 +40,13 @@ typedef struct definition_info
     variable * variable;
 }definition_info;
 
+typedef struct statement_info
+{
+    struct condition * condition;
+    struct statement * st;
+}statement_info;
+
+
 statement * create_assignment(struct variable * v, struct operation * op);
 statement * create_definition(int data_type, variable * v);
+statement * create_statement(struct condition * cond, struct statement * st, int type);
