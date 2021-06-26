@@ -2,14 +2,22 @@
 
 #include <stdio.h>
 #include "symbol_table.h"
+#include "operation.h"
+#include "statement.h"
+#include "graph.h"
 #include <string.h>
 #include <stdlib.h>
+
 int yylex();
 void yyerror(char *s);
+int yywrap(){
+    return 1;
+}
+
 struct sym sym_table[MAX_SYMB];
 int yydebug = 1;
-enum types type;
-enum types value_type;
+//enum types type;
+//enum types value_type;
 int new_graph_vertex_num = 0;
 int temp_edges_qty = 0;
 struct g_edge * temp_edges = NULL;
@@ -21,175 +29,157 @@ int syms_counter = 0;
 
 %union {
 int val;
+struct operation *operation;
+struct statement * statement;
+struct condition * condition;
+struct variable * variable;
+struct edge * edge;
+int type;
+int graph_type;
 struct sym *symp;
 char * str;
 }
-%token <symp> VAR
+
+%type <operation> expression
+%type <operation> operation
+%type <statement> list
+%type <statement> s
+%type <statement> definition
+%type <statement> assignment
+%type <statement> if
+%type <statement> do_while
+%type <statement> while
+%type <statement> gr_iter
+%type <operation> condition
+%type <operation> cond_log
+%type <operation> cond_or
+%type <operation> cond_and
+%type <variable> n
+%type <type> type
+%type <statement> e
+%type <operation> t
+%type <edge> edges
+%type <edge> edge
+
+%token <str> VAR
 %token <val> VALUE
+%token <graph_type> GRAPH W_GRAPH D_GRAPH
 %token <str> STRING_LITERAL
-%type <val> e
-%token  DO WHILE  ARITHMETICAL_OPS ASSIGN_OP MULT_DIV_OPS AND OR NOT RELATIONAL_OPS  TYPE IF ELSE 
+%token PLUS MINUS MULT DIV
+%token WHILE DO IF
+%token  ASSIGN_OP AND OR NOT RELATIONAL_OPS TYPE 
 %token  LETTER DECIMAL OPEN_PAR CLOSE_PAR OPEN_BRACKET CLOSE_BRACKET SEMICOLON ID ARROW DOUBLE_ARROW
-%token  GRAPH DFS BFS INT STRING W_GRAPH TREE D_GRAPH  CONS COMMA HYPHEN
+%token  DFS BFS INT STRING TREE CONS COMMA HYPHEN
 %%
 
 program:  defs list ;
 
-
 list: s
 	| list s
-        
 	;
 
-s:	e SEMICOLON 
-	| while
-    | do_while
-    | gr_iter
+s:	    e SEMICOLON
+    |   while
+    |   do_while
+    |   if
+    |   gr_iter
     ;
-while:     WHILE OPEN_PAR condition CLOSE_PAR s
-        |  WHILE OPEN_PAR condition CLOSE_PAR OPEN_BRACKET list CLOSE_BRACKET
+
+e:      definition
+    |   assignment
+    ;
+
+if:     IF OPEN_PAR condition CLOSE_PAR OPEN_BRACKET list CLOSE_BRACKET
+                {$$ = create_statement($3, $6, ST_IF); }
         ;
-do_while:   DO s WHILE OPEN_PAR condition CLOSE_PAR
-    |       DO s WHILE OPEN_PAR condition CLOSE_PAR OPEN_BRACKET list CLOSE_BRACKET
+while:     WHILE OPEN_PAR condition CLOSE_PAR OPEN_BRACKET list CLOSE_BRACKET
+                { $$ = create_statement($3,$6,ST_WHILE); }
+        ;
+
+do_while:   DO OPEN_BRACKET list CLOSE_BRACKET WHILE OPEN_PAR condition CLOSE_PAR
+                { $$ = create_statement($7,$3,ST_DO_WHILE); }
     ;
+
+
 
 condition:  cond_log 
     | cond_and 
     | cond_or
+    | operation
     ;
-cond_log:   e RELATIONAL_OPS e ;
+    
+cond_log:   condition RELATIONAL_OPS condition  
+            ;
 
 cond_and:   cond_log AND cond_log;
 
 cond_or:    cond_log OR cond_log;
 
-e:  e ARITHMETICAL_OPS t
-    | t 
-    | VAR ASSIGN_OP VALUE {sym_table_look($1->name)->type == T_INTEGER ? $1->content.int_value = $3 : yyerror("Error al asignar int");}
-    | VAR ASSIGN_OP  STRING_LITERAL  {
-                                        if(sym_table_look($1->name)->type == T_STRING) {
-                                            int len = strlen($3) + 1; $1->content.string_value = malloc(len); //TODO FREEEEEEEEEE
-                                            strcpy($1->content.string_value,$3);
-                                            $1->content.string_value[len - 1] = 0;
-                                            printf("STRING\n");
-                                        } else {
-                                            yyerror("Error al asignar string");
-                                        }
-                                        
-                                    }
-    | VAR ASSIGN_OP OPEN_BRACKET edges CLOSE_BRACKET{ struct sym * s = sym_table_look($1->name);
+defs:   defs definition SEMICOLON | definition SEMICOLON ;
 
-                                                    if(s->type == T_GRAPH){
-                                                        int nqty = s->content.graph_data.nodes_qty;
-                                                        printf("inicializando grafito\n");
-                                                        for(int i = 0; i<temp_edges_qty;i++){
-                                                            if(NODE_IN_RANGE(temp_edges[i].from,nqty) && NODE_IN_RANGE(temp_edges[i].to,nqty)){
-                                                                // printf("Bien, de %d a %d\n",temp_edges[i].from,temp_edges[i].to);
-                                                                ;
-                                                            }else{
-                                                                yyerror("Index out of range");
-                                                                YYABORT;
-                                                            }    
-                                                        }
-                                                        // free(temp_edges);
-                                                        s->content.graph_data.edges_info = temp_edges;
-                                                        s->content.graph_data.edges_qty = temp_edges_qty;
-                                                        temp_edges = NULL;
-                                                        temp_edges_qty = 0;
-                                                    }
+definition:     type n      
+                    {$$ = create_definition($1, $2); }
+            |   GRAPH OPEN_PAR VALUE CLOSE_PAR n 
+                    {$$ = create_graph_definition($1, $3, $5);}
+            |   D_GRAPH OPEN_PAR VALUE CLOSE_PAR n 
+                    {$$ = create_graph_definition($1, $3, $5);}
+            |   W_GRAPH OPEN_PAR VALUE CLOSE_PAR n 
+                    {$$ = create_graph_definition($1, $3, $5);}
+//            |   graph_type vertex_num n {type = T_GRAPH; printf("%d\n", new_graph_vertex_num);}
+            ;
 
-                                                    }
+edges:      edges COMMA edge
+        |   edge
+        ;
+//edges:
+//        edges COMMA edge {if (temp_edges == NULL) temp_edges = malloc(10*sizeof(struct g_edge));} 
+//        | edge           
+//        | edge {if (temp_edges == NULL) temp_edges = malloc(10*sizeof(struct g_edge));}
+//        ;
+
+edge:       VALUE ARROW VALUE
+                { $$ = create_edge($1, $3, S_EDGE_TYPE, 0); }
+        |   VALUE HYPHEN OPEN_PAR VALUE CLOSE_PAR ARROW VALUE
+                {$$ = create_w_edge($1, $7, $4, W_EDGE_TYPE, 0); }
+        ;
+
+type: INT {$$ = T_INTEGER ;} | STRING {$$ = T_STRING;} ;
+
+assignment:     n ASSIGN_OP expression 
+                        {$$ = create_assignment($1, $3, NULL); }
+            |   n ASSIGN_OP  STRING_LITERAL  
+                        { $$ = create_assignment($1, NULL, $3); }
+            | n ASSIGN_OP OPEN_BRACKET edges CLOSE_BRACKET
+                        {$$ = create_edges($1, $4); }
+            ;
+   
+expression:     operation
+            |   t
+            ;
+operation:      expression PLUS     expression {$$ = create_operation(OP_SUM, $1, $3);}
+           |    expression MINUS    expression {$$ = create_operation(OP_MINUS, $1, $3);}
+           |    expression MULT     expression {$$ = create_operation(OP_MULT, $1, $3);}
+           |    expression DIV      expression {$$ = create_operation(OP_DIV, $1, $3);}
+           ;
+            
+t:      VAR {$$ = create_op_from_var($1);}
+    |   OPEN_PAR expression CLOSE_PAR   {$$ = create_paren($2); }
+    |   VALUE {$$ = create_op_from_const($1);}
     ;
 
-edges:
-        edges COMMA edge {if (temp_edges == NULL) temp_edges = malloc(10*sizeof(struct g_edge));} 
-        | edge {if (temp_edges == NULL) temp_edges = malloc(10*sizeof(struct g_edge));}
+gr_iter:    DFS OPEN_PAR n CLOSE_PAR  {$$ = create_gr_iter($3,DFS_ITER); }
+        |   BFS OPEN_PAR n CLOSE_PAR  {$$ = create_gr_iter($3,BFS_ITER); }
         ;
 
-edge:   node_def
-        //TODO agregar mas tipos de flechitas
-        | w_node_def
-        ;
+//graph_type: GRAPH {type=T_GRAPH;} ;
 
-t:  t MULT_DIV_OPS f
-        | f
-        ;
+//vertex_num: OPEN_PAR VALUE CLOSE_PAR { new_graph_vertex_num = $2; };
 
-f:  VAR | VALUE ;
+n:  VAR     {$$ = create_variable($1);};
 
-defs:   defs def SEMICOLON | def SEMICOLON ;
-
-def:    type n 
-        | graph_type vertex_num n {;}
-        ;
-
-
-
-gr_iter_type: DFS | BFS ;
-
-gr_iter:    gr_iter_type OPEN_PAR n SEMICOLON n CLOSE_PAR s
-        |   gr_iter_type OPEN_PAR n SEMICOLON n CLOSE_PAR OPEN_BRACKET list CLOSE_BRACKET
-
-        ;
-type: INT {type = T_INTEGER ;} | STRING {type = T_STRING;} ;
-
-graph_type: GRAPH {type=T_GRAPH;} ;
-
-vertex_num: OPEN_PAR VALUE CLOSE_PAR { new_graph_vertex_num = $2; };
-
-n:  VAR;
-
-
-text:   l text 
-        | d text
-        | 
-        ;
-l:  LETTER ;
-
-number: d number ;
-
-d: DECIMAL ;
-
-node_defs:  node_def
-        |   node_defs node_def
-
-        ;
-
-d_node_defs:    d_node_def
-            |   d_node_defs d_node_def
-            ;
-            
-w_node_defs:    w_node_def 
-            |   w_node_defs w_node_def
-            ;
-
-node_def:   VALUE ARROW VALUE { printf("guardando edge\n");
-
-                                 if((temp_edges_qty % 10) == 0)
-                                    temp_edges = realloc(temp_edges,sizeof(temp_edges) + 10*sizeof(struct g_edge));
-                                
-                                 temp_edges[temp_edges_qty].from = $1;
-                                 temp_edges[temp_edges_qty++].to = $3;
-                                 printf("Nuevo edges qty: %d\n", temp_edges_qty);
-                                 }; 
-
-d_node_def: ID DOUBLE_ARROW ID 
-        |   ID ARROW ID
-        ;
-
-w_node_def: VALUE HYPHEN OPEN_PAR VALUE CLOSE_PAR ARROW VALUE {
-                                printf("guardando edge con peso\n");
-                                if((temp_edges_qty % 10) == 0)
-                                    temp_edges = realloc(temp_edges,sizeof(temp_edges) + 10*sizeof(struct g_edge));
-                                
-                                temp_edges[temp_edges_qty].from = $1;
-                                temp_edges[temp_edges_qty].to = $7;
-                                temp_edges[temp_edges_qty++].weight = $4;
-                                printf("Nuevo edges qty: %d\n", temp_edges_qty);
-
-                                
-                                }
- ; //TODO me da cosita
+// d_node_def: ID DOUBLE_ARROW ID 
+//        |   ID ARROW ID
+//        ;
      
 %%
 
@@ -234,66 +224,4 @@ void yyerror(s)
 char * s;
 {
     fprintf( stderr,"errorr ---%s\n",s);
-}
-
-struct sym * sym_table_look(char * s){
-    char * p;
-    struct sym * st;
-    int i;
-    for(i=0;i<MAX_SYMB;i++){
-            //ya definido
-            st = &sym_table[i];
-            if(st->name && !strcmp(st->name,s)){
-                
-                if(type != NONE){
-                        yyerror("Redefine variable\n");
-                        type = NONE;
-                        return st; //TODO SACAME
-                        
-                }
-                
-                printf("Ya estaba en la tabla, el nombre es %s y el valor es",st->name);
-                if(st->type == T_INTEGER)
-                    printf(" %d\n",st->content.int_value);
-                else if(st->type == T_STRING)
-                    printf(" %s\n",st->content.string_value);
-                else if(st->type == T_GRAPH){
-                    printf("este es un grafo, tiene %d vertices\n",st->content.graph_data.nodes_qty);
-                    for(int i = 0; i< st->content.graph_data.edges_qty ; i++)
-                        printf("edge %d de %d a %d con peso %d\n",i,st->content.graph_data.edges_info[i].from,st->content.graph_data.edges_info[i].to,st->content.graph_data.edges_info[i].weight);
-                }
-                                
-                return st;
-
-            }
-
-
-            if(!st->name){
-                
-                if(type == NONE){
-                    yyerror("Variable not found\n");
-                    return st; //TODO SACAME
-                } else if(type == T_GRAPH && new_graph_vertex_num <= 0) {
-                    yyerror("Wrong vertex number\n");
-                    return st; //TODO SACAME
-                }
-                syms_counter++;
-                st->name = strdup(s);
-                printf("Guardamos en la tabla de simbolos la variable %s \n",st->name);
-                st->type = type;
-                if(type == T_GRAPH) {
-                    printf("es de tipo grafo\n");
-                    
-                    st->content.graph_data.nodes_qty = new_graph_vertex_num;
-                    new_graph_vertex_num = 0;
-                
-                    //TODO crear grafo
-
-                }
-                type = NONE;
-                return st;
-            }
-    }
-    type = NONE;
-    yyerror("Limit of symbs reached\n");
 }
