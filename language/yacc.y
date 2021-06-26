@@ -2,8 +2,11 @@
 
 #include <stdio.h>
 #include "symbol_table.h"
+#include "operation.h"
 #include <string.h>
 #include <stdlib.h>
+
+#include "operation.h"
 int yylex();
 void yyerror(char *s);
 struct sym sym_table[MAX_SYMB];
@@ -17,16 +20,24 @@ struct sym * last_sym = NULL;
 
 %union {
 int val;
+enum operators * operator;
+struct operation *operation;
 struct sym *symp;
 char * str;
 }
+%type <operation> operation
+%type <val> e
+%type <val> t
+
 %token <symp> VAR
 %token <val> VALUE
 %token <str> STRING_LITERAL
-%type <val> e
-%token  DO WHILE  ARITHMETICAL_OPS ASSIGN_OP MULT_DIV_OPS AND OR NOT RELATIONAL_OPS  TYPE IF ELSE 
+%token <operator> ARITHMETICAL_OPS
+%token <operator> MULT_DIV_OPS
+%token  DO WHILE ASSIGN_OP AND OR NOT RELATIONAL_OPS  TYPE IF ELSE 
 %token  LETTER DECIMAL OPEN_PAR CLOSE_PAR OPEN_BRACKET CLOSE_BRACKET SEMICOLON ID ARROW DOUBLE_ARROW
 %token  GRAPH DFS BFS INT STRING W_GRAPH TREE D_GRAPH  CONS QUOTE 
+
 %%
 
 program:  defs list ;
@@ -34,7 +45,6 @@ program:  defs list ;
 
 list: s
 	| list s
-        
 	;
 
 s:	e SEMICOLON 
@@ -59,9 +69,7 @@ cond_and:   cond_log AND cond_log;
 
 cond_or:    cond_log OR cond_log;
 
-e:  e ARITHMETICAL_OPS t
-    | t 
-    | VAR ASSIGN_OP VALUE {sym_table_look($1->name)->type == T_INTEGER ? $1->content.int_value = $3 : yyerror("Error al asignar int");}
+e:  VAR ASSIGN_OP operation {sym_table_look($1->name)->type == T_INTEGER ? $1->content.int_value = $3 : yyerror("Error al asignar int");}
     | VAR ASSIGN_OP  STRING_LITERAL  {
                                         if(sym_table_look($1->name)->type == T_STRING) {
                                             int len = strlen($3) + 1; $1->content.string_value = malloc(len); 
@@ -73,8 +81,13 @@ e:  e ARITHMETICAL_OPS t
                                         }
                                         
                                     }
-    | VAR ASSIGN_OP OPEN_BRACKET  CLOSE_BRACKET
+    | VAR ASSIGN_OP OPEN_BRACKET CLOSE_BRACKET
     ;
+
+operation: operation ARITHMETICAL_OPS operation {$$ = create_operation(operator_look($2), $1, $2);}
+           | t                                       
+           ;
+            
 
 edges:
         edges edge
@@ -85,7 +98,7 @@ edge:   node_def
         //TODO agregar mas tipos de flechitas
         ;
 
-t:  t MULT_DIV_OPS f
+t:  t MULT_DIV_OPS t    {$$ = create_operation(operator_look($2), $1, $2);}
         | f
         ;
 
