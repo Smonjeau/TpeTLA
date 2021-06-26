@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <assert.h>
 
-#include "graph.h"
 #include "search.h"
 
 #define TEST_SIZE (199137)

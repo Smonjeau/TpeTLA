@@ -1,5 +1,6 @@
+#ifndef GRAPH__H
+#define GRAPH__H
 /* basic directed graph type */
-
 typedef struct graph *Graph;
 
 /* create a new graph with n vertices labeled 0..n-1 and no edges */
@@ -30,3 +31,4 @@ void graph_foreach(Graph g, int source,
         void *data);
 
 void search_bfs(Graph g, int vertex);
+#endif

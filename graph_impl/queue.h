@@ -1,3 +1,6 @@
+#ifndef QUEUE__H
+#define QUEUE__H
+
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -12,3 +15,5 @@ int is_empty(Queue q);
 void enqueue(Queue q, int value);
 
 int dequeue(Queue q);
+
+#endif

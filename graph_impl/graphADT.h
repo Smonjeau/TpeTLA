@@ -1,3 +1,6 @@
+#ifndef GRAPH_ADT__H
+#define GRAPH_ADT__H
+
 #define N 100
 
 typedef struct graph
@@ -18,3 +21,5 @@ typedef struct node {
 typedef graph * graphADT;
 
 graph * newGraph(struct edge edges[], int n);
+
+#endif

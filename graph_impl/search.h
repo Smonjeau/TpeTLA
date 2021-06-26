@@ -20,6 +20,11 @@
 /* this is not intended to be opaque---user can read it */
 /* (but should not write it!) */
 
+#ifndef SEARCH__H
+#define SEARCH__H
+
+#include "graph.h"
+
 #define SEARCH_INFO_NULL (-1) /* for empty slots */
 
 struct search_info {
@@ -43,3 +48,5 @@ void dfs(struct search_info *results, int root);
 
 /* perform breadth-first search starting at root, updating results */
 void bfs(struct search_info *results, int root);
+
+#endif
