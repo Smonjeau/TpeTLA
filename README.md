@@ -32,7 +32,7 @@ El lenguaje desarrollado está inspirado en el Lenguaje C, siguiendo las directi
 El compilador, desarrollado en C, genera en su salida programas en el mismo lenguaje.
 
 ## Consideraciones
-Debido a la definición de la gramática, las declaraciones y las asignaciones se deben realizar en líneas separadas, las expresiones condicionales solo comparan variables, y la función _print_ permite imprimir únicamente variables de tipo cadena de caracteres o enteros. Además, no se tiene soporte para sentencias 'if-else' ni bucles de tipo 'for'.
+Debido a la definición de la gramática, las declaraciones y las asignaciones se deben realizar en líneas separadas, las expresiones condicionales solo comparan variables, y la función _print_ permite imprimir únicamente variables. Además, no se tiene soporte para sentencias 'if-else' ni bucles de tipo 'for'.
 
 ## Proyecto
 
@@ -87,7 +87,7 @@ Las definiciones y declaraciones deben encontrarse por separado, como se puede v
 int a;
 int b;
 string c;
-graph d;
+graph (4) d;
 
 a = 5;
 b = a + 3 * a;
@@ -99,15 +99,21 @@ Se pueden emplear operadores al momento de realizar una asignación.
 
 ### Grafos
 
+Para declarar un grafo, se define un nombre y la cantidad de nodos del mismo.
+
+```
+graph (<cantidad_de_nodos>) name;
+```
+
 Los nodos de los grafos están representados por valores de tipo _int_, unidos por aristas que pueden tomar las siguientes formas:
 
-- **Aristas simples** ->
+- **Aristas simples:** ->
 
 ```shell
 d = { 1->5 , 3->4 };
 ```
 
-- **Aristas con peso** -(\<peso\>)->
+- **Aristas con peso:** -(\<peso\>)->
 
 ```shell
 d = { 1-(4)->5 , 3-(3)->4 };
@@ -117,12 +123,12 @@ d = { 1-(4)->5 , 3-(3)->4 };
 
 Se definieron los siguientes operadores, enumerados en orden de precendencia, de la más baja a la más alta:
 
-1. **||**		      _(OR lógico)_
-2. **&&**		      _(AND lógico)_
-3. **< > <= >= == !=**	  _(Comparadores)_
-4. **\+ \-**      _(Operadores de suma y resta)_
-5. **\* /**           _(Operadores de multiplicación y división)_
-6. **!**              _(Operador unario NOT)_
+1. or	      _(OR lógico)_
+2. and		      _(AND lógico)_
+3. < > <= >= == !=	  _(Comparadores)_
+4. \+ \-      _(Operadores de suma y resta)_
+5. \* /           _(Operadores de multiplicación y división)_
+6. not              _(Operador unario NOT)_
 
 Los operadores lógicos no pueden utilizarse fuera de las condiciones de las funciones _if_, _while_ y _do while_. Por otro lado, los errores de precedencia pueden evitarse con el uso de paréntesis que envuelvan las expresiones.
 
@@ -131,24 +137,24 @@ Los operadores lógicos no pueden utilizarse fuera de las condiciones de las fun
 Las sentencias pueden tomar las siguientes formas:
 - Condicional IF
 ```
-if(<conditions>) {
-    <statements>
+if(<condición>) {
+    <sentencias>
 }
 ```
 
 - Bucle WHILE
 ```
-while(<condition>) {
-    <statements>
+while(<condición>) {
+    <sentencias>
 }
 ```
 
 - Bucle DO-WHILE
 ```
 do{
-    <statements>
+    <sentencias>
 }
-while(<condition>);
+while(<condición>);
 ```
 
 - Recorrido de grafos
@@ -169,11 +175,15 @@ print(a);
 ```
 int a;
 string b;
+graph (3) c;
+
 a = 10;
 b = "Test\n";
+c = {1->2, 2->3};
 
 print(a);
 print(b);
+print(c);
 ```
 
 ### Producciones
