@@ -503,6 +503,8 @@ void decode_condition(ast_node * node, FILE * c_out){
     }
 }
 
+int graph_iterations_count = 0;
+
 void decode_tree(ast_node * node, FILE * c_out) {
     enum types var_type;
     ast_node * left_var, *right_var;
@@ -510,6 +512,7 @@ void decode_tree(ast_node * node, FILE * c_out) {
     condition * condition_aux;
     struct graph_sym data;
     struct gr_iteration * griter;
+    int current_graph_iter;
 
     switch(node->type) {
         case LIST_NODE:
@@ -629,11 +632,14 @@ void decode_tree(ast_node * node, FILE * c_out) {
             }
             if(griter->var->type != T_INTEGER)
                 yyerror("DFS iterator variable must be int.");
-            fprintf(c_out,"s = search_info_create(%s);dfs(s, %s);\n",left_sym->name,griter->init);
-            fprintf(c_out,"i = 0; while(i < s->reached) { %s = s->preorder[i];",griter->var->name);
+            current_graph_iter = graph_iterations_count++;
+            fprintf(c_out, "int bfgljlrkwgwjr%d;", current_graph_iter);
+            fprintf(c_out, "struct search_info * bfgljlrkwgwjr_%d;", current_graph_iter);
+            fprintf(c_out,"bfgljlrkwgwjr_%d = search_info_create(%s);dfs(bfgljlrkwgwjr_%d, %s);\n",current_graph_iter,left_sym->name,current_graph_iter,griter->init);
+            fprintf(c_out,"bfgljlrkwgwjr%d = 0; while(bfgljlrkwgwjr%d < bfgljlrkwgwjr_%d->reached) { %s = bfgljlrkwgwjr_%d->preorder[bfgljlrkwgwjr%d];",current_graph_iter,current_graph_iter,current_graph_iter,griter->var->name,current_graph_iter,current_graph_iter);
             decode_tree(node->right,c_out);
 
-            fprintf(c_out,"i++;}");    
+            fprintf(c_out,"bfgljlrkwgwjr%d++;}", current_graph_iter);    
 
             break;
 
@@ -649,11 +655,16 @@ void decode_tree(ast_node * node, FILE * c_out) {
             }
             if(griter->var->type != T_INTEGER)
                 yyerror("BFS iterator variable must be int.");
-            fprintf(c_out," s = search_info_create(%s);bfs(s, %s);\n",left_sym->name,griter->init);
-            fprintf(c_out,"i = 0; while(i < s->reached) { %s = s->preorder[i];",griter->var->name);
+
+            current_graph_iter = graph_iterations_count++;
+            fprintf(c_out, "int bfgljlrkwgwjr%d;", current_graph_iter);
+            fprintf(c_out, "struct search_info * bfgljlrkwgwjr_%d;", current_graph_iter);
+
+            fprintf(c_out," bfgljlrkwgwjr_%d = search_info_create(%s);bfs(bfgljlrkwgwjr_%d, %s);\n",current_graph_iter,left_sym->name,current_graph_iter,griter->init);
+            fprintf(c_out,"bfgljlrkwgwjr%d = 0; while(bfgljlrkwgwjr%d < bfgljlrkwgwjr_%d->reached) { %s = bfgljlrkwgwjr_%d->preorder[bfgljlrkwgwjr%d];",current_graph_iter,current_graph_iter,current_graph_iter,griter->var->name,current_graph_iter,current_graph_iter);
             decode_tree(node->right,c_out);
 
-            fprintf(c_out,"i++;}");    
+            fprintf(c_out,"bfgljlrkwgwjr%d++;}", current_graph_iter);    
 
 
             break;
@@ -720,7 +731,7 @@ int main(int argc, char *argv[]){
         fputs("#include <stdio.h>\n", c_out);
         fputs("#include \"graph_impl/search.h\"\n", c_out);
         fputs("#include <string.h>\n", c_out);
-        fputs("int main(){int i; struct search_info *s; goto entry_point;", c_out);
+        fputs("int main(){goto entry_point;", c_out);
 
 
         if(root->left != NULL){
