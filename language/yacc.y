@@ -133,6 +133,7 @@ cond_not:   NOT condition {$$ = add_node(NOT_NODE,$2,NULL,NULL);};
 
 
  e: assignment {$$ = $1;}
+    |   n 
     ;
 
 edges:
@@ -206,6 +207,7 @@ assignment:     n ASSIGN_OP expression {
                                                         s->content.graph_data.edges_qty = temp_edges_qty;
                                                         temp_edges = NULL;
                                                         temp_edges_qty = 0;
+                                                        $$ = add_node(ASSIGN_NODE,$1,NULL,NULL);
                                                     }
             }
             ;
@@ -377,6 +379,7 @@ void decode_tree(ast_node * node, FILE * c_out) {
     ast_node * left_var, *right_var;
     struct sym * left_sym;
     condition * condition_aux;
+    struct graph_sym data;
 
     switch(node->type) {
         case LIST_NODE:
@@ -399,6 +402,11 @@ void decode_tree(ast_node * node, FILE * c_out) {
                     case T_INTEGER:
                         fprintf(c_out, "printf(\"%%d\", %s);", ((struct sym *)node->left->data)->name);
                         break;
+
+                    case T_GRAPH:
+                        fprintf(c_out,"print_graph(%s);",((struct sym *)node->left->data)->name);
+
+                        break;
                 }
                 
             }
@@ -406,6 +414,7 @@ void decode_tree(ast_node * node, FILE * c_out) {
 
         case ASSIGN_NODE:
             left_var = node->left;
+            printf("TOY EN ASSSIGN NODE\n");
             right_var = node->right;
             left_sym = (struct sym *)left_var->data;
             switch(left_sym->type) {
@@ -417,8 +426,10 @@ void decode_tree(ast_node * node, FILE * c_out) {
                     break;
 
                 case T_GRAPH:
-
-
+                    data = left_sym->content.graph_data;
+                    for (int i = 0; i< data.edges_qty;i++){
+                        fprintf(c_out,"graph_add_edge(%s,%d,%d);",left_sym->name,data.edges_info[i].from,data.edges_info[i].to);
+                    }
                     break;
             }
                 
@@ -543,7 +554,7 @@ int main(int argc, char *argv[]){
     }
     free_resources();
 
-   // system("gcc graph_impl/queue.c graph_impl/graph.c intermediate.c -o runme");
+    system("gcc graph_impl/queue.c graph_impl/graph.c intermediate.c -o runme");
 
     /*if(remove("intermediate.c") != 0)
         fprintf(stderr, "Error when trying to remove intermediate.c\n");*/

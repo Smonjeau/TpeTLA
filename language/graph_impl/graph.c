@@ -155,6 +155,11 @@ graph_has_edge(Graph g, int source, int sink)
     }
 }
 
+
+void print_edges(Graph g, int source, int sink, void *data){
+    printf("%d ---> %d\n",source,sink);
+}
+
 /* invoke f on all edges (u,v) with source u */
 /* supplying data as final parameter to f */
 void
@@ -170,6 +175,18 @@ graph_foreach(Graph g, int source,
     for(i = 0; i < g->alist[source]->d; i++) {
         f(g, source, g->alist[source]->list[i], data);
     }
+}
+
+void print_graph(Graph g){
+    printf("Graph\nVertices:");
+    int vqty = graph_vertex_count(g);
+    for (int i = 0; i<vqty;i++)
+        printf(" %d ", i);
+    
+    printf("\nEdges:\n");
+    for (int i = 0; i<vqty;i++)
+        graph_foreach(g,i,print_edges,NULL);
+
 }
 
 
