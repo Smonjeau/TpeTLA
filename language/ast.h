@@ -26,7 +26,9 @@ enum node_type{
     AND_NODE,
     OR_NODE,
     NOT_NODE,
-    ENTRY_POINT_NODE
+    ENTRY_POINT_NODE,
+    DFS_NODE,
+    BFS_NODE
 
 };
 

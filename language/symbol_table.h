@@ -34,6 +34,11 @@ struct sym{
     enum types type;
 };
 
+struct gr_iteration{
+    char * init;
+    struct sym * var;
+};
+
 
 struct sym * sym_table_look(char * s);
 #endif

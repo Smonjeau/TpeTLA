@@ -166,6 +166,7 @@ edge:   VALUE ARROW VALUE { printf("guardando edge\n");
             if((temp_edges_qty % 10) == 0)
                 temp_edges = realloc(temp_edges,sizeof(temp_edges) + 10*sizeof(struct g_edge));
 
+            
             temp_edges[temp_edges_qty].from = $1;
             temp_edges[temp_edges_qty++].to = $3;
             temp_edges[temp_edges_qty].from = $3;
@@ -302,14 +303,20 @@ operation:      t PLUS     t {
            ;
 
 
-gr_iter:    DFS OPEN_PAR n SEMICOLON t CLOSE_PAR OPEN_BRACKET list CLOSE_BRACKET {
+gr_iter:    DFS OPEN_PAR n COMMA t COMMA n CLOSE_PAR OPEN_BRACKET list CLOSE_BRACKET {
                     
-                    ast_node * aux = add_node(GR_ITER_COND_NODE, $3, NULL, $5);
-                    $$ = add_node(GR_ITER_NODE, aux, $8, $1);
+
+                    //ast_node * aux = add_node(GR_ITER_COND_NODE, $3, NULL, $5);
+                    struct gr_iteration * aux = malloc(sizeof(struct gr_iteration)); //FREEEEEEEEE
+                    aux->init = $5;
+                    aux->var = (struct sym * ) $7->data;
+                    $$ = add_node(DFS_NODE, $3, $10, aux);
             }
-        |   BFS OPEN_PAR n SEMICOLON n CLOSE_PAR OPEN_BRACKET list CLOSE_BRACKET {
-                    ast_node * aux = add_node(GR_ITER_COND_NODE, $3, $5, NULL);
-                    $$ = add_node(GR_ITER_NODE, aux, $8, $1);
+        |   BFS OPEN_PAR n COMMA t COMMA n CLOSE_PAR OPEN_BRACKET list CLOSE_BRACKET {
+                    struct gr_iteration * aux = malloc(sizeof(struct gr_iteration)); //FREEEEEEEEE
+                    aux->init = $5;
+                    aux->var = (struct sym * ) $7->data;
+                    $$ = add_node(BFS_NODE, $3, $10, aux);
             }
 
         ;
@@ -435,6 +442,7 @@ void decode_tree(ast_node * node, FILE * c_out) {
     struct sym * left_sym;
     condition * condition_aux;
     struct graph_sym data;
+    struct gr_iteration * griter;
 
     switch(node->type) {
         case LIST_NODE:
@@ -541,6 +549,34 @@ void decode_tree(ast_node * node, FILE * c_out) {
             decode_condition(left_var,c_out);
             fprintf(c_out,");");
             break;
+
+        case DFS_NODE:
+            left_var = node->left;
+            left_sym = (struct sym *)left_var->data;
+
+            griter = (struct gr_iteration * ) node->data;
+            fprintf(c_out,"s = search_info_create(%s);dfs(s, %s);\n",left_sym->name,griter->init);
+            fprintf(c_out,"i = 0; while(i < s->reached) { %s = s->preorder[i];",griter->var->name);
+            decode_tree(node->right,c_out);
+
+            fprintf(c_out,"i++;}");    
+
+            break;
+
+        case BFS_NODE:
+            left_var = node->left;
+            left_sym = (struct sym *)left_var->data;
+
+            griter = (struct gr_iteration * ) node->data;
+            fprintf(c_out," s = search_info_create(%s);bfs(s, %s);\n",left_sym->name,griter->init);
+            fprintf(c_out,"i = 0; while(i < s->reached) { %s = s->preorder[i];",griter->var->name);
+            decode_tree(node->right,c_out);
+
+            fprintf(c_out,"i++;}");    
+
+
+            break;
+
     }
     
     
@@ -601,7 +637,8 @@ int main(int argc, char *argv[]){
 
         fputs("#include \"graph_impl/graph.h\"\n", c_out);
         fputs("#include <stdio.h>\n", c_out);
-        fputs("int main(){goto entry_point;", c_out);
+        fputs("#include \"graph_impl/search.h\"\n", c_out);
+        fputs("int main(){int i; struct search_info *s; goto entry_point;", c_out);
 
 
         if(root->left != NULL){
@@ -616,7 +653,7 @@ int main(int argc, char *argv[]){
     }
     free_resources();
 
-    system("gcc graph_impl/queue.c graph_impl/graph.c intermediate.c -o runme");
+    system("gcc graph_impl/queue.c graph_impl/graph.c graph_impl/search.c intermediate.c -o runme");
 
     /*if(remove("intermediate.c") != 0)
         fprintf(stderr, "Error when trying to remove intermediate.c\n");*/
