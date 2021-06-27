@@ -65,7 +65,7 @@ list: s {$$ = add_node(LIST_NODE, $1, NULL, NULL);}
 s:	e SEMICOLON {$$ = $1;}
 	| while {$$ = $1 ;}
     | do_while {$$ = $1;}
-    | gr_iter
+    | gr_iter {$$ = $1;}
     | print { $$ = $1; }
     | read { $$ = $1; }
     | if {$$ = $1;}
@@ -141,9 +141,39 @@ edges:
         | edge {if (temp_edges == NULL) temp_edges = malloc(10*sizeof(struct g_edge));}
         ;
 
-edge:   node_def
-        //TODO agregar mas tipos de flechitas
-        | w_node_def
+edge:   VALUE ARROW VALUE { printf("guardando edge\n");
+
+                                 if((temp_edges_qty % 10) == 0)
+                                    temp_edges = realloc(temp_edges,sizeof(temp_edges) + 10*sizeof(struct g_edge));
+                                
+                                 temp_edges[temp_edges_qty].from = $1;
+                                 temp_edges[temp_edges_qty++].to = $3;
+                                 printf("Nuevo edges qty: %d\n", temp_edges_qty);
+                                 }; 
+        | VALUE MINUS OPEN_PAR VALUE CLOSE_PAR ARROW VALUE {
+                                printf("guardando edge con peso\n");
+                                if((temp_edges_qty % 10) == 0)
+                                    temp_edges = realloc(temp_edges,sizeof(temp_edges) + 10*sizeof(struct g_edge));
+                                
+                                temp_edges[temp_edges_qty].from = $1;
+                                temp_edges[temp_edges_qty].to = $7;
+                                temp_edges[temp_edges_qty++].weight = $4;
+                                printf("Nuevo edges qty: %d\n", temp_edges_qty);
+
+                                
+                                }
+        | VALUE DOUBLE_ARROW VALUE {
+            if((temp_edges_qty % 10) == 0)
+                temp_edges = realloc(temp_edges,sizeof(temp_edges) + 10*sizeof(struct g_edge));
+
+            temp_edges[temp_edges_qty].from = $1;
+            temp_edges[temp_edges_qty++].to = $3;
+            temp_edges[temp_edges_qty].from = $3;
+            temp_edges[temp_edges_qty++].to = $1;
+
+
+
+        }
         ;
 
 
@@ -154,9 +184,8 @@ defs:   defs def SEMICOLON {$$ = add_node(DEFS_NODE,$2,$1,NULL);}| def SEMICOLON
 
 def:    type n {$$ = add_node(DEF_NODE,$1,$2,NULL);}
         | graph_type vertex_num n {
-            int * aux = malloc(sizeof(int));
-            *aux = $3;
-            $$ = add_node(DEF_NODE,$1,$3,aux);
+            
+            $$ = add_node(DEF_NODE,$1,$3,NULL);
             }
         ;
 
@@ -290,52 +319,11 @@ type: INT {type = T_INTEGER ; enum types * aux = malloc(sizeof(int)); *aux= T_IN
 
 graph_type: GRAPH {type=T_GRAPH; enum types * aux = malloc(sizeof(int)); *aux= T_GRAPH; $$ = add_node(TYPE_NODE,NULL,NULL,aux);} ;
 
-//vertex_num: OPEN_PAR VALUE CLOSE_PAR { new_graph_vertex_num = $2; };
 
 n:  VAR {/*char * aux = strdup($1->name);*/ $$ = add_node(VAR_NODE,NULL,NULL,$1);};
 
 
-node_defs:  node_def
-        |   node_defs node_def
 
-        ;
-
-d_node_defs:    d_node_def
-            |   d_node_defs d_node_def
-            ;
-            
-w_node_defs:    w_node_def 
-            |   w_node_defs w_node_def
-            ;
-
-node_def:   VALUE ARROW VALUE { printf("guardando edge\n");
-
-                                 if((temp_edges_qty % 10) == 0)
-                                    temp_edges = realloc(temp_edges,sizeof(temp_edges) + 10*sizeof(struct g_edge));
-                                
-                                 temp_edges[temp_edges_qty].from = $1;
-                                 temp_edges[temp_edges_qty++].to = $3;
-                                 printf("Nuevo edges qty: %d\n", temp_edges_qty);
-                                 }; 
-
-d_node_def: ID DOUBLE_ARROW ID 
-        |   ID ARROW ID
-        ;
-
-w_node_def: VALUE MINUS OPEN_PAR VALUE CLOSE_PAR ARROW VALUE {
-                                printf("guardando edge con peso\n");
-                                if((temp_edges_qty % 10) == 0)
-                                    temp_edges = realloc(temp_edges,sizeof(temp_edges) + 10*sizeof(struct g_edge));
-                                
-                                temp_edges[temp_edges_qty].from = $1;
-                                temp_edges[temp_edges_qty].to = $7;
-                                temp_edges[temp_edges_qty++].weight = $4;
-                                printf("Nuevo edges qty: %d\n", temp_edges_qty);
-
-                                
-                                }
- ; //TODO me da cosita
-     
 %%
 
 extern FILE * yyin;
