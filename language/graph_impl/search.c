@@ -60,6 +60,7 @@ search_info_destroy(struct search_info *s)
 struct edge {
     int u;          /* source */
     int v;          /* sink */
+    int w;
 };
 
 /* stack/queue */
@@ -70,7 +71,7 @@ struct queue {
 };
 
 static void
-push_edge(Graph g, int u, int v, void *data)
+push_edge(Graph g, int u, int v,int weight, void *data)
 {
     struct queue *q;
 
@@ -80,6 +81,7 @@ push_edge(Graph g, int u, int v, void *data)
 
     q->e[q->top].u = u;
     q->e[q->top].v = v;
+    q->e[q->top].w = weight;
     q->top++;
 }
 
@@ -103,7 +105,7 @@ generic_search(struct search_info *r, int root, int use_queue)
     q.bottom = q.top = 0;
 
     /* push the root */
-    push_edge(r->graph, root, root, &q);
+    push_edge(r->graph, root, root,0, &q);
 
     /* while q.e not empty */
     while(q.bottom < q.top) {

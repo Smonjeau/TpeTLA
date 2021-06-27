@@ -46,19 +46,28 @@ struct expression * expr;
 %type <str> t
 %type <val> expression
 
-%token  DO WHILE  PLUS MINUS MULT DIV ASSIGN_OP MULT_DIV_OPS AND OR NOT TYPE IF ELSE 
+%token  DO WHILE  PLUS MINUS MULT DIV ASSIGN_OP  AND OR NOT TYPE IF ELSE 
 %token  LETTER DECIMAL OPEN_PAR CLOSE_PAR OPEN_BRACKET CLOSE_BRACKET SEMICOLON ID ARROW DOUBLE_ARROW
 %token  GRAPH INT STRING W_GRAPH TREE D_GRAPH  CONS COMMA  PRINT READ LOWER LOWER_EQ GREATER GREATER_EQ EQ N_EQ
 %token  ENTRY_POINT
 
+%left OR
+%left AND
+%left GREATER GREATER_EQ LOWER LOWER_EQ EQ N_EQ
+%left PLUS MINUS 
+%left MULT DIV
+%left NOT
+
+
+
 %%
 
-program:  defs list {root =  add_node(PROGRAM_NODE, $1, $2, NULL);} ;
+program:  defs list {root =  add_node(PROGRAM_NODE, $1, $2, NULL);} | defs {root= add_node(PROGRAM_NODE,$1,NULL,NULL);};
 
 
 list: s {$$ = add_node(LIST_NODE, $1, NULL, NULL);}
 	| list s { $$ = add_node(LIST_NODE, $2, $1, NULL);}
-    | { $$ = add_node(LIST_NODE, NULL, NULL, NULL); }
+   
         
 	;
 
@@ -121,8 +130,9 @@ cond_log:   t EQ t {condition * c = malloc(sizeof(struct condition)); c->cond_ty
         |   t LOWER t {condition * c = malloc(sizeof(struct condition)); c->cond_type = COND_LOWER; c->cond1 = $1; c->cond2 = $3; $$ =c;} 
         |   t LOWER_EQ t {condition * c = malloc(sizeof(struct condition)); c->cond_type = COND_LOWER_EQ; c->cond1 = $1; c->cond2 = $3; $$ =c;}
         |   t GREATER t {condition * c = malloc(sizeof(struct condition)); c->cond_type = COND_GREATER; c->cond1 = $1; c->cond2 = $3; $$ =c;}
-        |   t GREATER_EQ t {condition * c = malloc(sizeof(struct condition)); c->cond_type = COND_GREATER_EQ; c->cond1 = $1; c->cond2 = $3; $$ =c;}
-;
+        |   t GREATER_EQ t {condition * c = malloc(sizeof(struct condition)); c->cond_type = COND_GREATER_EQ; c->cond1 = $1; c->cond2 = $3; $$ =c;} ;
+
+
 cond_and:   condition AND condition {ast_node * node = add_node(AND_NODE,$1,$3,NULL); $$ = node; };
 
 cond_or:    condition OR condition  {ast_node * node = add_node(OR_NODE,$1,$3,NULL); $$ = node;};
