@@ -1,7 +1,18 @@
-graph (10) g;
-string robertito;
-g = {0-(12)-> 5  2 -> 4};
-robertito = "pepitoooo";
-g;
-robertito;
-g;
+_START_
+string salto;
+int a;
+salto = "\n";
+a = 3;
+a= a + 1;
+a = a -a;
+print(a);
+print(salto);
+a = a + 4;
+print(a);
+print(salto);
+a = a / 2;
+print(a);
+print(salto);
+a = 1000 * a;
+print(a);
+print(salto);

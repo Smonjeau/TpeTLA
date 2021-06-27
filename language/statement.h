@@ -54,6 +54,7 @@ typedef struct condition{
     char * cond1, * cond2;
 
 }condition;
+
 /*
 typedef struct statement {
     int declaration_type;

@@ -37,14 +37,14 @@ struct ast_node  * ast;
 struct expression * expr;
 }
 %type <ast> program defs list def type graph_type  condition cond_and cond_or cond_not
-%type <ast> n s print e read while do_while gr_iter if assignment entry_point
+%type <ast> n s print e read while do_while gr_iter if assignment entry_point operation 
 %token <symp> VAR
 %token <val> VALUE
 %token <str> STRING_LITERAL
 %token <str> DFS BFS
-%type<val> operation expression
 %type <cond> cond_log  
 %type <str> t
+%type <val> expression
 
 %token  DO WHILE  PLUS MINUS MULT DIV ASSIGN_OP MULT_DIV_OPS AND OR NOT TYPE IF ELSE 
 %token  LETTER DECIMAL OPEN_PAR CLOSE_PAR OPEN_BRACKET CLOSE_BRACKET SEMICOLON ID ARROW DOUBLE_ARROW
@@ -169,7 +169,11 @@ assignment:     n ASSIGN_OP expression {
                                 ast_node * node = add_node(ASSIGN_NODE, $1, int_value_node, NULL);
                                 $$ = node;
                             }
-            |   n ASSIGN_OP  STRING_LITERAL {
+            |   n ASSIGN_OP operation {
+                                $$ = add_node(ASSIGN_NODE, $1, $3, NULL);
+                            }
+            |
+                n ASSIGN_OP  STRING_LITERAL {
                                         if(((struct sym *)$1->data)->type == T_STRING) {
                                             int len = strlen($3) + 1; ((struct sym *)$1->data)->content.string_value = malloc(len);
                                             strcpy(((struct sym *)$1->data)->content.string_value,$3);
@@ -210,8 +214,7 @@ assignment:     n ASSIGN_OP expression {
             }
             ;
 
-expression:     operation {$$ = $1;}
-            |   t {
+expression:     t {
                     if(is_t_var) {
                         struct sym * var_sym = sym_table_look($1);
                         if(var_sym->type != T_INTEGER) {
@@ -225,10 +228,46 @@ expression:     operation {$$ = $1;}
                     
                 }
             ;
-operation:      expression PLUS     expression { $$ = $1 + $3; /*$$ = create_operation(OP_SUM, $1, $3);*/}
-           |    expression MINUS    expression { $$ = $1 - $3;/*$$ = create_operation(OP_MINUS, $1, $3);*/}
-           |    expression MULT     expression {$$ = $1 * $3; }
-           |    expression DIV      expression { $$ = $1 / $3;}
+operation:      t PLUS     t {
+                    int len = strlen($1);
+                    char * aux = malloc(len + 1);
+                    strcpy(aux, $1);
+                    ast_node * n1 = add_node(EXPRESSION_NODE, NULL, NULL, aux);
+                    len = strlen($3);
+                    aux = malloc(len + 1);
+                    strcpy(aux, $3);
+                    ast_node * n2 = add_node(EXPRESSION_NODE, NULL, NULL, aux);
+                    $$ = add_node(PLUS_NODE,n1, n2, NULL); }
+           |    t MINUS    t {
+                    int len = strlen($1);
+                    char * aux = malloc(len + 1);
+                    strcpy(aux, $1);
+                    ast_node * n1 = add_node(EXPRESSION_NODE, NULL, NULL, aux);
+                    len = strlen($3);
+                    aux = malloc(len + 1);
+                    strcpy(aux, $3);
+                    ast_node * n2 = add_node(EXPRESSION_NODE, NULL, NULL, aux);
+                    $$ = add_node(MINUS_NODE,n1, n2, NULL); }
+           |    t MULT     t {
+                    int len = strlen($1);
+                    char * aux = malloc(len + 1);
+                    strcpy(aux, $1);
+                    ast_node * n1 = add_node(EXPRESSION_NODE, NULL, NULL, aux);
+                    len = strlen($3);
+                    aux = malloc(len + 1);
+                    strcpy(aux, $3);
+                    ast_node * n2 = add_node(EXPRESSION_NODE, NULL, NULL, aux);
+                    $$ = add_node(MULT_NODE,n1, n2, NULL); }
+           |    t DIV      t {
+                    int len = strlen($1);
+                    char * aux = malloc(len + 1);
+                    strcpy(aux, $1);
+                    ast_node * n1 = add_node(EXPRESSION_NODE, NULL, NULL, aux);
+                    len = strlen($3);
+                    aux = malloc(len + 1);
+                    strcpy(aux, $3);
+                    ast_node * n2 = add_node(EXPRESSION_NODE, NULL, NULL, aux);
+                    $$ = add_node(DIV_NODE,n1, n2, NULL); }
            ;
 
 
@@ -313,6 +352,34 @@ void free_resources(){
                 free(st.content.graph_data.edges_info);
         }
     }
+}
+void decode_operation(ast_node * node, FILE * c_out) {
+    switch(node -> type){
+        case PLUS_NODE:
+            decode_operation(node->left, c_out);
+            fprintf(c_out, " + ");
+            decode_operation(node->right, c_out);
+        break;
+        case MINUS_NODE:
+            decode_operation(node->left, c_out);
+            fprintf(c_out, " - ");
+            decode_operation(node->right, c_out);
+        break;
+        case MULT_NODE:
+            decode_operation(node->left, c_out);
+            fprintf(c_out, " * ");
+            decode_operation(node->right, c_out);        break;
+        case DIV_NODE:
+            decode_operation(node->left, c_out);
+            fprintf(c_out, " / ");
+            decode_operation(node->right, c_out);        break;
+        case EXPRESSION_NODE:
+            fprintf(c_out, " %s", (char *) node -> data);
+        break;
+        default:
+        break;
+    }
+
 }
 
 void decode_condition(ast_node * node, FILE * c_out){
@@ -410,7 +477,14 @@ void decode_tree(ast_node * node, FILE * c_out) {
             left_sym = (struct sym *)left_var->data;
             switch(left_sym->type) {
                 case T_INTEGER:
-                    fprintf(c_out, "%s = %d;", left_sym->name, *((int *)right_var->data));
+                    if(right_var->type == EXPRESSION_NODE){
+                        fprintf(c_out, "%s = %d;", left_sym->name, *((int *)right_var->data));
+                    } else {
+                        fprintf(c_out, "%s = ", left_sym->name);
+                        decode_operation(node->right, c_out);
+                        fprintf(c_out, "; ");
+
+                    }
                     break;
                 case T_STRING:
                     fprintf(c_out, "%s = %s;", left_sym->name, (char *)right_var->data);
@@ -543,7 +617,7 @@ int main(int argc, char *argv[]){
     }
     free_resources();
 
-   // system("gcc graph_impl/queue.c graph_impl/graph.c intermediate.c -o runme");
+    system("gcc graph_impl/queue.c graph_impl/graph.c intermediate.c -o runme");
 
     /*if(remove("intermediate.c") != 0)
         fprintf(stderr, "Error when trying to remove intermediate.c\n");*/
