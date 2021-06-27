@@ -1,6 +1,6 @@
 ##### 72.39 Teoría de Lenguajes, Autómatas y Compiladores - 1Q 2021
 
-# Lenguaje para grafos basado en C
+# Lenguaje para grafos con salida en C
 
 
 ## Integrantes
@@ -28,7 +28,7 @@
 - [Referencias](#referencias)
 
 ## Idea subyacente y objetivo
-El lenguaje desarrollado está inspirado en el Lenguaje C, siguiendo las directivas del paradigma de programación imperativa, y añadiendo al mismo el manejo de grafos, digrafos y grafos ponderados. Se añadieron también funciones basadas en algoritmos vistos en la materia 93.59-Matemática Discreta, para el recorrido de árboles por medio de DFS y BFS.
+El lenguaje desarrollado está inspirado en algunas instrucciones del Lenguaje C, presentando además el manejo de grafos, digrafos y grafos ponderados. Se añadieron también funciones basadas en algoritmos vistos en la materia 93.59-Matemática Discreta, para el recorrido de árboles por medio de DFS y BFS.
 El compilador, desarrollado en C, genera en su salida programas en el mismo lenguaje.
 
 ## Consideraciones
@@ -199,10 +199,10 @@ print(c);
 
 Las posibles mejoras y extensiones para el lenguaje que nos parecen pertinentes son:
 
-- La incorporación de sentencias 'if-else' y 'for', así como comentarios.
-- La ampliación de las funciones de operación sobre grafos, añadiendo algoritmos como los de Dijkstra y Kruskal.
-- El manejo de matrices para la representación de grafos.
-- El desarrollo de una función graficadora de grafos.
+- La incorporación de sentencias 'if-else' y 'for', que no presentan grandes diferencias a las ya manejadas por el lenguaje.
+- La ampliación de las funciones de operación sobre grafos, añadiendo algoritmos como los de Dijkstra y Kruskal. Dado el funcionamiento del lenguaje en su forma actual, tampoco presentarían inconvenientes al momento de adaptarlos.
+- El manejo de matrices para la representación de grafos posee una complejidad un poco mayor, ya que se debe incluir un nuevo tipo de variable con todo lo que esto conlleva (definición, operaciones permitidas, funciones que trabajen con matrices).
+- El desarrollo de una función para ilustrar grafos es otra alternativa que podría adaptarse a la estructura que presenta el lenguaje actual.
 
 ## Referencias
 - Implementación de grafos (https://www.cs.yale.edu/homes/aspnes/pinewiki/C(2f)Graphs.html)
