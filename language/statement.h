@@ -52,10 +52,6 @@ typedef struct condition{
     int is_boolean;          //Indica si la operacion es solo un bool
     enum condition_type cond_type;
     char * cond1, * cond2;
-    char * cond3, * cond4; //para and y or
-    enum logical_operand operand;
-    enum condition_type cond2_type;
-    enum parenthesis use_par;
 
 }condition;
 /*
