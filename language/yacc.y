@@ -27,7 +27,8 @@ struct sym *symp;
 char * str;
 struct ast_node  * ast;
 }
-%type <ast> program defs list def type graph_type n s print e read while do_while gr_iter if
+%type <ast> program defs list def type graph_type gr_iter_type
+%type <ast> n s print e read while do_while gr_iter if assignment
 %token <symp> VAR
 %token <val> VALUE
 %token <str> STRING_LITERAL
@@ -35,9 +36,10 @@ struct ast_node  * ast;
 %type <val> t
 
 %type <val> expression
-%token  DO WHILE  PLUS MINUS MULT DIV ASSIGN_OP MULT_DIV_OPS AND OR NOT RELATIONAL_OPS  TYPE IF ELSE 
+%token <ast> DO WHILE IF DFS BFS 
+%token  PLUS MINUS MULT DIV ASSIGN_OP MULT_DIV_OPS AND OR NOT RELATIONAL_OPS  TYPE  ELSE 
 %token  LETTER DECIMAL OPEN_PAR CLOSE_PAR OPEN_BRACKET CLOSE_BRACKET SEMICOLON ID ARROW DOUBLE_ARROW
-%token  GRAPH DFS BFS INT STRING W_GRAPH TREE D_GRAPH  CONS COMMA  PRINT READ
+%token  GRAPH INT STRING W_GRAPH TREE D_GRAPH  CONS COMMA  PRINT READ
 
 %%
 
