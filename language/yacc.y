@@ -169,6 +169,23 @@ edge:   VALUE ARROW VALUE { printf("guardando edge\n");
 
                                 
                                 }
+        | VALUE LOWER MINUS OPEN_PAR VALUE CLOSE_PAR ARROW VALUE {
+                                printf("guardando edge doble con peso\n");
+                                if((temp_edges_qty % 10) == 0)
+                                    temp_edges = realloc(temp_edges,sizeof(temp_edges) + 10*sizeof(struct g_edge));
+                                
+                                temp_edges[temp_edges_qty].from = $1;
+                                temp_edges[temp_edges_qty].to = $8;
+                                temp_edges[temp_edges_qty++].weight = $5;
+
+                                temp_edges[temp_edges_qty].from = $8;
+                                temp_edges[temp_edges_qty].to = $1;
+                                temp_edges[temp_edges_qty++].weight = $5;
+
+                                printf("Nuevo edges qty: %d\n", temp_edges_qty);
+
+                                
+                                }
         | VALUE DOUBLE_ARROW VALUE {
             if((temp_edges_qty % 10) == 0)
                 temp_edges = realloc(temp_edges,sizeof(temp_edges) + 10*sizeof(struct g_edge));
