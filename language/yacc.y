@@ -4,10 +4,12 @@
 #include "symbol_table.h"
 #include <string.h>
 #include <stdlib.h>
+#include <ctype.h>
 #include "ast.h"
 #include "statement.h"
 int yylex();
 void yyerror(char *s);
+enum types assert_same_type(char * n1, char * n2);
 int yywrap(){
     return 1;
 }
@@ -22,7 +24,7 @@ int temp_edges_qty = 0;
 struct g_edge * temp_edges = NULL;
 struct g_edge temp_edge;
 struct sym * last_sym = NULL;
-#define FORCE_PAR 0x1
+#define FORCE_PAR (void *)0x1
 int syms_counter = 0;
 ast_node * root;
 #define NODE_IN_RANGE(n,max) (n >= 0 && n < max)
@@ -118,21 +120,16 @@ condition:  cond_log {$$ = add_node(COND_NODE,NULL,NULL,$1);}
                     $2->data = FORCE_PAR;
 
                 }
-                /*if($2->type == COND_NODE){
-                    condition * c = (struct condition * ) $2->data;
-                    c->use_par = USE_PAR;
-                }*/
                 $$ =$2;}
     ;
 
-cond_log:   t EQ t {condition * c = malloc(sizeof(struct condition)); c->cond_type = COND_EQ; c->cond1 = $1; c->cond2 = $3; $$ = c;}
-        |   t N_EQ t {condition * c = malloc(sizeof(struct condition)); c->cond_type = COND_NE; c->cond1 = $1; c->cond2 = $3; $$ =c;}
-        |   t LOWER t {condition * c = malloc(sizeof(struct condition)); c->cond_type = COND_LOWER; c->cond1 = $1; c->cond2 = $3; $$ =c;} 
-        |   t LOWER_EQ t {condition * c = malloc(sizeof(struct condition)); c->cond_type = COND_LOWER_EQ; c->cond1 = $1; c->cond2 = $3; $$ =c;}
-        |   t GREATER t {condition * c = malloc(sizeof(struct condition)); c->cond_type = COND_GREATER; c->cond1 = $1; c->cond2 = $3; $$ =c;}
-        |   t GREATER_EQ t {condition * c = malloc(sizeof(struct condition)); c->cond_type = COND_GREATER_EQ; c->cond1 = $1; c->cond2 = $3; $$ =c;} ;
-
-
+cond_log:   t EQ t {enum types op_type = assert_same_type($1, $3); if(op_type == T_ERROR) {YYABORT;} condition * c = malloc(sizeof(struct condition)); c->cond_type = COND_EQ; c->cond1 = $1; c->cond2 = $3; $$ = c; if(op_type != NONE) c->involved_types = op_type;}
+        |   t N_EQ t {enum types op_type = assert_same_type($1, $3); if(op_type == T_ERROR) {YYABORT;} condition * c = malloc(sizeof(struct condition)); c->cond_type = COND_NE; c->cond1 = $1; c->cond2 = $3; $$ =c; if(op_type != NONE) c->involved_types = op_type;}
+        |   t LOWER t {enum types op_type = assert_same_type($1, $3); if(op_type == T_ERROR) {YYABORT;} condition * c = malloc(sizeof(struct condition)); c->cond_type = COND_LOWER; c->cond1 = $1; c->cond2 = $3; $$ =c; if(op_type != NONE) c->involved_types = op_type;} 
+        |   t LOWER_EQ t {enum types op_type = assert_same_type($1, $3); if(op_type == T_ERROR) {YYABORT;} condition * c = malloc(sizeof(struct condition)); c->cond_type = COND_LOWER_EQ; c->cond1 = $1; c->cond2 = $3; $$ =c; if(op_type != NONE) c->involved_types = op_type;}
+        |   t GREATER t {enum types op_type = assert_same_type($1, $3); if(op_type == T_ERROR) {YYABORT;} condition * c = malloc(sizeof(struct condition)); c->cond_type = COND_GREATER; c->cond1 = $1; c->cond2 = $3; $$ =c; if(op_type != NONE) c->involved_types = op_type;}
+        |   t GREATER_EQ t {enum types op_type = assert_same_type($1, $3); if(op_type == T_ERROR) {YYABORT;} condition * c = malloc(sizeof(struct condition)); c->cond_type = COND_GREATER_EQ; c->cond1 = $1; c->cond2 = $3; $$ =c; if(op_type != NONE) c->involved_types = op_type;}
+        ;
 cond_and:   condition AND condition {ast_node * node = add_node(AND_NODE,$1,$3,NULL); $$ = node; };
 
 cond_or:    condition OR condition  {ast_node * node = add_node(OR_NODE,$1,$3,NULL); $$ = node;};
@@ -345,6 +342,25 @@ n:  VAR {/*char * aux = strdup($1->name);*/ $$ = add_node(VAR_NODE,NULL,NULL,$1)
 
 extern FILE * yyin;
 
+enum types assert_same_type(char * n1, char * n2) {
+    if(isdigit(n1[0]) || isdigit(n2[0]))
+        return NONE;
+
+    struct sym * sym1 = sym_table_look(n1);
+    struct sym * sym2 = sym_table_look(n2);
+    if(sym1 == NULL || sym2 == NULL) {
+        return T_ERROR;
+    }
+    if(sym1->type != NONE && sym2->type != NONE) {
+        if(sym1->type == sym2->type) {
+            return sym1->type;
+        }
+        yyerror("Error: Incompatible types\n");
+        return T_ERROR;
+    }
+    return NONE;    
+}
+
 void free_resources(){
     struct sym  st;
 
@@ -435,12 +451,21 @@ void decode_condition(ast_node * node, FILE * c_out){
 
         case COND_NODE:
             condition_aux = (struct condition*)node->data;
-            /*if(condition_aux->use_par == USE_PAR){
-                    fprintf(c_out,"( ");
-                }*/
-            fprintf(c_out, "%s %s %s", condition_aux->cond1, condition_symbols[condition_aux->cond_type], condition_aux->cond2);
-            /*if(condition_aux->use_par == USE_PAR)
-                fprintf(c_out," )");*/
+            if(condition_aux->involved_types == T_STRING) {
+                if(condition_aux->cond_type == COND_EQ) {
+                    fprintf(c_out, "strcmp(%s,%s)==0", condition_aux->cond1, condition_aux->cond2);
+                } else if(condition_aux->cond_type == COND_NE) {
+                    fprintf(c_out, "strcmp(%s,%s)!=0", condition_aux->cond1, condition_aux->cond2);
+                } else {
+                    fprintf(stderr, "Error: Incompatible comparison between strings\n");
+                    abort();
+                }
+            } else {
+                fprintf(c_out, "%s %s %s", condition_aux->cond1, condition_symbols[condition_aux->cond_type], condition_aux->cond2);
+            }
+
+            
+            
 
             break;
     }
@@ -529,7 +554,7 @@ void decode_tree(ast_node * node, FILE * c_out) {
             break;
 
         case IF_NODE:
-
+            printf("ACAAA IF\n");
             left_var = node->left;
             condition_aux = (condition *)left_var->data;
             fprintf(c_out,"if(");
@@ -648,6 +673,7 @@ int main(int argc, char *argv[]){
         fputs("#include \"graph_impl/graph.h\"\n", c_out);
         fputs("#include <stdio.h>\n", c_out);
         fputs("#include \"graph_impl/search.h\"\n", c_out);
+        fputs("#include <string.h>\n", c_out);
         fputs("int main(){int i; struct search_info *s; goto entry_point;", c_out);
 
 
@@ -665,6 +691,7 @@ int main(int argc, char *argv[]){
 
     system("gcc graph_impl/queue.c graph_impl/graph.c graph_impl/search.c intermediate.c -o runme");
 
+    //TODO Descomentar esto
     /*if(remove("intermediate.c") != 0)
         fprintf(stderr, "Error when trying to remove intermediate.c\n");*/
     return 0;
@@ -672,12 +699,13 @@ int main(int argc, char *argv[]){
 void yyerror(s)
 char * s;
 {
-    fprintf( stderr,"errorr ---%s\n",s);
+    fprintf( stderr,"Error message: %s\n",s);
+    abort();
 }
 
 struct sym * sym_table_look(char * s){
     char * p;
-    struct sym * st;
+    struct sym * st = NULL;
     int i;
     for(i=0;i<MAX_SYMB;i++){
             //ya definido
@@ -711,10 +739,8 @@ struct sym * sym_table_look(char * s){
                 printf("vertex num vale %d\n",new_graph_vertex_num);
                 if(type == NONE){
                     yyerror("Variable not found\n");
-                    return st; //TODO SACAME
                 } else if(type == T_GRAPH && new_graph_vertex_num <= 0) {
                     yyerror("Wrong vertex number\n");
-                    return st; //TODO SACAME
                 }
                 syms_counter++;
                 st->name = strdup(s);
@@ -725,8 +751,6 @@ struct sym * sym_table_look(char * s){
                     
                     st->content.graph_data.nodes_qty = new_graph_vertex_num;
                     new_graph_vertex_num = 0;
-                
-                    //TODO crear grafo
 
                 }
                 type = NONE;

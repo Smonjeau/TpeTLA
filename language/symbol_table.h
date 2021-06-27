@@ -8,7 +8,8 @@ enum types{
     T_INTEGER,
     T_STRING,
     T_GRAPH,
-    T_TREE
+    T_TREE,
+    T_ERROR
     };
 
 
