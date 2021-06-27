@@ -34,7 +34,12 @@ int state;
 "-"		{return(MINUS);}
 "*"	{return(MULT);}
 "/"	{return(DIV);}
-"<" | "<=" | ">" | ">=" | "==" | "!=" {return(RELATIONAL_OPS);}
+"<" {return (LOWER);}
+ "<=" {return(LOWER_EQ;)}
+ ">" {return(GREATER);}
+ ">=" {return(GREATER_EQ);}
+ "==" {return(EQ);}
+ "!=" {return(N_EQ);}
 "->" {return(ARROW);}
 "<->"   {return(DOUBLE_ARROW);}
 "int"	{return(INT);}

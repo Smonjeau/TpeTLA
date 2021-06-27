@@ -10,7 +10,9 @@ enum node_type{
     TYPE_NODE,
     VAR_NODE,
     PRINT_NODE,
-    LIST_NODE
+    LIST_NODE,
+    STMT_NODE,
+    COND_NODE
 
 };
 

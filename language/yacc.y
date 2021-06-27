@@ -5,6 +5,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include "ast.h"
+#include "statement.h"
 int yylex();
 void yyerror(char *s);
 struct sym sym_table[MAX_SYMB];
@@ -25,6 +26,8 @@ ast_node * root;
 int val;
 struct sym *symp;
 char * str;
+enum condition_type condition_t;
+condition * cond;
 struct ast_node  * ast;
 }
 %type <ast> program defs list def type graph_type gr_iter_type
@@ -34,12 +37,12 @@ struct ast_node  * ast;
 %token <str> STRING_LITERAL
 %type<val> operation
 %type <val> t
+%type <cond> cond_log cond_and cond_or
 
 %type <val> expression
-%token <ast> DO WHILE IF DFS BFS 
-%token  PLUS MINUS MULT DIV ASSIGN_OP MULT_DIV_OPS AND OR NOT RELATIONAL_OPS  TYPE  ELSE 
+%token  DO WHILE  PLUS MINUS MULT DIV ASSIGN_OP MULT_DIV_OPS AND OR NOT   TYPE IF ELSE 
 %token  LETTER DECIMAL OPEN_PAR CLOSE_PAR OPEN_BRACKET CLOSE_BRACKET SEMICOLON ID ARROW DOUBLE_ARROW
-%token  GRAPH INT STRING W_GRAPH TREE D_GRAPH  CONS COMMA  PRINT READ
+%token  GRAPH DFS BFS INT STRING W_GRAPH TREE D_GRAPH  CONS COMMA  PRINT READ LOWER LOWER_EQ GREATER GREATER_EQ EQ N_EQ
 
 %%
 
@@ -52,7 +55,7 @@ list: s {$$ = add_node(LIST_NODE, $1, NULL, NULL);}
 	;
 
 s:	e SEMICOLON 
-	| while
+	| while {$$ = $1 ;}
     | do_while
     | gr_iter
     | print { $$ = $1; }
@@ -67,8 +70,7 @@ print: PRINT OPEN_PAR n CLOSE_PAR SEMICOLON {
 read: READ OPEN_PAR n CLOSE_PAR SEMICOLON {printf("read en %s\n",(char*)$3->data);}
         ;
 
-while:     WHILE OPEN_PAR condition CLOSE_PAR s
-        |  WHILE OPEN_PAR condition CLOSE_PAR OPEN_BRACKET list CLOSE_BRACKET
+while:  WHILE OPEN_PAR condition CLOSE_PAR OPEN_BRACKET list CLOSE_BRACKET  {$$ = add_node(WHILE_NODE,$3,$6,NULL)}
         ;
 do_while:   DO s WHILE OPEN_PAR condition CLOSE_PAR
     |       DO s WHILE OPEN_PAR condition CLOSE_PAR OPEN_BRACKET list CLOSE_BRACKET
@@ -77,13 +79,19 @@ if:     IF OPEN_PAR condition CLOSE_PAR OPEN_BRACKET list CLOSE_BRACKET
                 {/*$$ = create_statement($3, $6, ST_IF); */}
 
                 ;
-condition:  cond_log 
-    | cond_and 
-    | cond_or
+condition:  cond_log {$$ = add_node(COND_NODE,NULL,NULL,$1);}
+    | cond_and {$$ = add_node(COND_NODE,NULL,NULL,$1);}
+    | cond_or {$$ = add_node(COND_NODE,NULL,NULL,$1);}
     ;
-cond_log:   e RELATIONAL_OPS e ;
 
-cond_and:   cond_log AND cond_log;
+cond_log:   expression EQ expression {condition * c = malloc(struct condition); c->cond_type = COND_EQ; c->cond1 = $1; c->cond2 = $3; $$ = c;}
+        |   expression N_EQ expression {condition * c = malloc(struct condition); c->cond_type = COND_NE; c->cond1 = $1; c->cond2 = $3; $$ =c;}
+        |   expression LOWER expression {condition * c = malloc(struct condition); c->cond_type = COND_LOWER; c->cond1 = $1; c->cond2 = $3; $$ =c;} 
+        |   expression LOWER_EQ expression {condition * c = malloc(struct condition); c->cond_type = COND_LOWER_EQ; c->cond1 = $1; c->cond2 = $3; $$ =c;}
+        |   expression GREATER expression {condition * c = malloc(struct condition); c->cond_type = COND_GREATER; c->cond1 = $1; c->cond2 = $3; $$ =c;}
+        |   expression GREATER_EQ expression {condition * c = malloc(struct condition); c->cond_type = COND_GREATER_EQ; c->cond1 = $1; c->cond2 = $3; $$ =c;}
+;
+cond_and:   cond_log AND cond_log ;
 
 cond_or:    cond_log OR cond_log;
 
