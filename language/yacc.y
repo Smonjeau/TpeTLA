@@ -490,7 +490,7 @@ void decode_tree(ast_node * node, FILE * c_out) {
                 case T_GRAPH:
                     data = left_sym->content.graph_data;
                     for (int i = 0; i< data.edges_qty;i++){
-                        fprintf(c_out,"graph_add_edge(%s,%d,%d);",left_sym->name,data.edges_info[i].from,data.edges_info[i].to);
+                        fprintf(c_out,"graph_add_edge(%s,%d,%d,%d);",left_sym->name,data.edges_info[i].from,data.edges_info[i].to, data.edges_info[i].weight);
                     }
                     break;
             }

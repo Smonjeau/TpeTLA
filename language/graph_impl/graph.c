@@ -20,6 +20,7 @@ struct graph {
         int len;        /* number of slots in array */
         char is_sorted; /* true if list is already sorted */
         int list[1];    /* actual list of successors */
+        int weights[1]; /* Weight for each successor */
     } *alist[1];
 };
 
@@ -58,13 +59,9 @@ graph_destroy(Graph g)
     free(g);
 }
 
-/* add an edge to an existing graph */
-void
-graph_add_edge(Graph g, int u, int v)
-{
 
-    if(graph_has_edge(g,u,v))
-        return;
+void
+graph_add_edge(Graph g, int u, int v, int weight) {
     assert(u >= 0);
     assert(u < g->n);
     assert(v >= 0);
@@ -79,7 +76,8 @@ graph_add_edge(Graph g, int u, int v)
     }
 
     /* now add the new sink */
-    g->alist[u]->list[g->alist[u]->d++] = v;
+    g->alist[u]->list[g->alist[u]->d] = v;
+    g->alist[u]->weights[g->alist[u]->d++] = weight;
     g->alist[u]->is_sorted = 0;
 
     /* bump edge count */
@@ -159,15 +157,15 @@ graph_has_edge(Graph g, int source, int sink)
 }
 
 
-void print_edges(Graph g, int source, int sink, void *data){
-    printf("%d ---> %d\n",source,sink);
+void print_edges(Graph g, int source, int sink, int weight, void *data){
+    printf("%d --(%d)--> %d\n",source, weight, sink);
 }
 
 /* invoke f on all edges (u,v) with source u */
 /* supplying data as final parameter to f */
 void
 graph_foreach(Graph g, int source,
-    void (*f)(Graph g, int source, int sink, void *data),
+    void (*f)(Graph g, int source, int sink, int weight, void *data),
     void *data)
 {
     int i;
@@ -176,7 +174,7 @@ graph_foreach(Graph g, int source,
     assert(source < g->n);
 
     for(i = 0; i < g->alist[source]->d; i++) {
-        f(g, source, g->alist[source]->list[i], data);
+        f(g, source, g->alist[source]->list[i], g->alist[source]->weights[i] , data);
     }
 }
 
