@@ -27,14 +27,17 @@ struct sym *symp;
 char * str;
 struct ast_node  * ast;
 }
-%type <ast> program defs list def type graph_type n s print
+%type <ast> program defs list def type graph_type n s print e read while do_while gr_iter if
 %token <symp> VAR
 %token <val> VALUE
 %token <str> STRING_LITERAL
-%type <val> e
-%token  DO WHILE  ARITHMETICAL_OPS ASSIGN_OP MULT_DIV_OPS AND OR NOT RELATIONAL_OPS  TYPE IF ELSE 
+%type<val> operation
+%type <val> t
+
+%type <val> expression
+%token  DO WHILE  PLUS MINUS MULT DIV ASSIGN_OP MULT_DIV_OPS AND OR NOT RELATIONAL_OPS  TYPE IF ELSE 
 %token  LETTER DECIMAL OPEN_PAR CLOSE_PAR OPEN_BRACKET CLOSE_BRACKET SEMICOLON ID ARROW DOUBLE_ARROW
-%token  GRAPH DFS BFS INT STRING W_GRAPH TREE D_GRAPH  CONS COMMA HYPHEN PRINT READ
+%token  GRAPH DFS BFS INT STRING W_GRAPH TREE D_GRAPH  CONS COMMA  PRINT READ
 
 %%
 
@@ -56,7 +59,7 @@ s:	e SEMICOLON
     ;
 
 print: PRINT OPEN_PAR n CLOSE_PAR SEMICOLON {
-        add_node(PRINT_NODE, $3, NULL, NULL);}
+        $$ = add_node(PRINT_NODE, $3, NULL, NULL);}
         ;
 
 read: READ OPEN_PAR n CLOSE_PAR SEMICOLON {printf("read en %s\n",(char*)$3->data);}
@@ -68,7 +71,10 @@ while:     WHILE OPEN_PAR condition CLOSE_PAR s
 do_while:   DO s WHILE OPEN_PAR condition CLOSE_PAR
     |       DO s WHILE OPEN_PAR condition CLOSE_PAR OPEN_BRACKET list CLOSE_BRACKET
     ;
+if:     IF OPEN_PAR condition CLOSE_PAR OPEN_BRACKET list CLOSE_BRACKET
+                {/*$$ = create_statement($3, $6, ST_IF); */}
 
+                ;
 condition:  cond_log 
     | cond_and 
     | cond_or
@@ -78,11 +84,33 @@ cond_log:   e RELATIONAL_OPS e ;
 cond_and:   cond_log AND cond_log;
 
 cond_or:    cond_log OR cond_log;
-/*
-e:  e ARITHMETICAL_OPS t
-    | t 
-    | VAR ASSIGN_OP VALUE {sym_table_look($1->name)->type == T_INTEGER ? $1->content.int_value = $3 : yyerror("Error al asignar int");}
-    | VAR ASSIGN_OP  STRING_LITERAL  {
+
+
+ e:  def
+    | assignment 
+    ;
+
+edges:
+        edges COMMA edge {if (temp_edges == NULL) temp_edges = malloc(10*sizeof(struct g_edge));} 
+        | edge {if (temp_edges == NULL) temp_edges = malloc(10*sizeof(struct g_edge));}
+        ;
+
+edge:   node_def
+        //TODO agregar mas tipos de flechitas
+        | w_node_def
+        ;
+
+
+t:  VAR  {$$ = $1->content.int_value}| VALUE {$$ = $1;} | OPEN_PAR expression CLOSE_PAR   {$$ = $2 ;};
+
+defs:   defs def SEMICOLON {$$ = add_node(DEFS_NODE,$2,$1,NULL);}| def SEMICOLON {$$ = add_node(DEFS_NODE,$1,NULL,NULL);};
+
+def:    type n {$$ = add_node(DEF_NODE,$1,$2,NULL);}
+        | graph_type OPEN_PAR VALUE CLOSE_PAR n {new_graph_vertex_num = $3; ;$$ = add_node(DEF_NODE,$1,$5,NULL);}
+        ;
+
+assignment:     n ASSIGN_OP expression {sym_table_look($1->name)->type == T_INTEGER ? $1->content.int_value = $3 : yyerror("Error al asignar int");}
+            |   n ASSIGN_OP  STRING_LITERAL {
                                         if(sym_table_look($1->name)->type == T_STRING) {
                                             int len = strlen($3) + 1; $1->content.string_value = malloc(len); //TODO FREEEEEEEEEE
                                             strcpy($1->content.string_value,$3);
@@ -93,8 +121,7 @@ e:  e ARITHMETICAL_OPS t
                                         }
                                         
                                     }
-    | VAR ASSIGN_OP OPEN_BRACKET edges CLOSE_BRACKET{ struct sym * s = sym_table_look($1->name);
-
+            | n ASSIGN_OP OPEN_BRACKET edges CLOSE_BRACKET{ struct sym * s = sym_table_look($1->name);
                                                     if(s->type == T_GRAPH){
                                                         int nqty = s->content.graph_data.nodes_qty;
                                                         printf("inicializando grafito\n");
@@ -113,41 +140,17 @@ e:  e ARITHMETICAL_OPS t
                                                         temp_edges = NULL;
                                                         temp_edges_qty = 0;
                                                     }
-
-                                                    }
-    ;*/
-
-e:  def
-    | assignment 
-    ;
-
-edges:
-        edges COMMA edge {if (temp_edges == NULL) temp_edges = malloc(10*sizeof(struct g_edge));} 
-        | edge {if (temp_edges == NULL) temp_edges = malloc(10*sizeof(struct g_edge));}
-        ;
-
-edge:   node_def
-        //TODO agregar mas tipos de flechitas
-        | w_node_def
-        ;
-
-t:  t MULT_DIV_OPS f
-        | f
-        ;
-
-f:  VAR | VALUE ;
-
-defs:   defs def SEMICOLON {$$ = add_node(DEFS_NODE,$2,$1,NULL);}| def SEMICOLON {$$ = add_node(DEFS_NODE,$1,NULL,NULL);};
-
-def:    type n {$$ = add_node(DEF_NODE,$1,$2,NULL);}
-        | GRAPH vertex_num n {$$ = add_node(DEF_NODE,$1,$3,NULL);}
-        ;
-
-assignment:     n ASSIGN_OP expression 
-            |   n ASSIGN_OP  STRING_LITERAL
-            | n ASSIGN_OP OPEN_BRACKET edges CLOSE_BRACKET
+            }
             ;
 
+expression:     operation {$$ = $1;}
+            |   t {$$ = $1;}
+            ;
+operation:      expression PLUS     expression { $$ = $1 + $3; /*$$ = create_operation(OP_SUM, $1, $3);*/}
+           |    expression MINUS    expression { $$ = $1 - $3;/*$$ = create_operation(OP_MINUS, $1, $3);*/}
+           |    expression MULT     expression {$$ = $1 * $3; }
+           |    expression DIV      expression { $$ = $1 / $3;)}
+           ;
 
 
 gr_iter_type: DFS | BFS ;
@@ -160,7 +163,7 @@ type: INT {type = T_INTEGER ; enum types * aux = malloc(sizeof(int)); *aux= T_IN
      STRING {type = T_STRING; enum types * aux = malloc(sizeof(int)); *aux= T_STRING; $$ = add_node(TYPE_NODE,NULL,NULL,aux);} 
      ;
 
-//graph_type: GRAPH {type=T_GRAPH; enum types * aux = malloc(sizeof(int)); *aux= T_GRAPH; $$ = add_node(TYPE_NODE,NULL,NULL,aux);} ;
+graph_type: GRAPH {type=T_GRAPH; enum types * aux = malloc(sizeof(int)); *aux= T_GRAPH; $$ = add_node(TYPE_NODE,NULL,NULL,aux);} ;
 
 //vertex_num: OPEN_PAR VALUE CLOSE_PAR { new_graph_vertex_num = $2; };
 
@@ -194,7 +197,7 @@ d_node_def: ID DOUBLE_ARROW ID
         |   ID ARROW ID
         ;
 
-w_node_def: VALUE HYPHEN OPEN_PAR VALUE CLOSE_PAR ARROW VALUE {
+w_node_def: VALUE MINUS OPEN_PAR VALUE CLOSE_PAR ARROW VALUE {
                                 printf("guardando edge con peso\n");
                                 if((temp_edges_qty % 10) == 0)
                                     temp_edges = realloc(temp_edges,sizeof(temp_edges) + 10*sizeof(struct g_edge));
@@ -233,14 +236,12 @@ void decode_tree(ast_node * node, FILE * c_out) {
             decode_tree(node->right, c_out);
     if(node->left != NULL){
         enum node_type t = node->left->type;
-
         char * var_name = (char *) node->left->right->data;
         struct sym * read_sym;
         switch(t) {
             case T_GRAPH:
                 read_sym = sym_table_look(var_name); //TODO chequear
                 fprintf(c_out, "Graph %s;%s=graph_create(%d);", var_name, var_name, read_sym->content.graph_data.nodes_qty);
-
                 break;
             case T_INTEGER:
                 fprintf(c_out, "int %s;", var_name);
@@ -251,7 +252,6 @@ void decode_tree(ast_node * node, FILE * c_out) {
         }
         free(node->left->left->data);
         free(var_name);       
-
     }*/
 }
 

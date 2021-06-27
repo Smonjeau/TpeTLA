@@ -16,9 +16,6 @@ int state;
 %%
 
 \n	{ state = LOOKUP; }
-
-"$" 	{ return 0; }
-
 "do"  { return(DO); }
 "while"   { return(WHILE); }
 "if"    {return(IF);   }
@@ -29,9 +26,14 @@ int state;
 ")"	{return(CLOSE_PAR);}
 "{"	{return(OPEN_BRACKET);}
 "}"	{return(CLOSE_BRACKET);}
-"-"	{return(HYPHEN);}
+
+"print"	{return(PRINT);}
+"read"	{return(READ);}
 "and" | "or" | "not" {return(LOGICAL_OPS);}
-"+" |  "-"      {return(ARITHMETICAL_OPS);}
+"+"         {return(PLUS);}
+"-"		{return(MINUS);}
+"*"	{return(MULT);}
+"/"	{return(DIV);}
 "<" | "<=" | ">" | ">=" | "==" | "!=" {return(RELATIONAL_OPS);}
 "->" {return(ARROW);}
 "<->"   {return(DOUBLE_ARROW);}
@@ -39,8 +41,6 @@ int state;
 "string"	{return(STRING);}
 "graph" {return(GRAPH);}
 "," {return (COMMA);}
-"print" {return (PRINT);}
-"read" {return (READ);}
 
 -?[0-9]+	{yylval.val = atoi(yytext) ; return(VALUE);}
 [A-Za-z_][A-Za-z_0-9]*	{yylval.symp = sym_table_look(yytext); return(VAR);}
