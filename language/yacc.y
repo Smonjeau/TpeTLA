@@ -152,12 +152,14 @@ t:  n  {is_t_var = 1; $$ = ((struct sym *)$1->data)->name; } | VALUE { is_t_var 
 defs:   defs def SEMICOLON {$$ = add_node(DEFS_NODE,$2,$1,NULL);}| def SEMICOLON {$$ = add_node(DEFS_NODE,$1,NULL,NULL);} | entry_point { $$ = $1;};
 
 def:    type n {$$ = add_node(DEF_NODE,$1,$2,NULL);}
-        | graph_type OPEN_PAR VALUE CLOSE_PAR n {
+        | graph_type vertex_num n {
             int * aux = malloc(sizeof(int));
             *aux = $3;
-            $$ = add_node(DEF_NODE,$1,$5,aux);
+            $$ = add_node(DEF_NODE,$1,$3,aux);
             }
         ;
+
+vertex_num: OPEN_PAR VALUE CLOSE_PAR { new_graph_vertex_num = $2; {printf("VERTEX\n");} };
 
 assignment:     n ASSIGN_OP expression {
                                 ((struct sym *)$1->data)->type == T_INTEGER ? ((struct sym *)$1->data)->content.int_value = $3 : yyerror("Error al asignar int");
@@ -413,6 +415,11 @@ void decode_tree(ast_node * node, FILE * c_out) {
                 case T_STRING:
                     fprintf(c_out, "%s = %s;", left_sym->name, (char *)right_var->data);
                     break;
+
+                case T_GRAPH:
+
+
+                    break;
             }
                 
             break;
@@ -536,7 +543,7 @@ int main(int argc, char *argv[]){
     }
     free_resources();
 
-    system("gcc graph_impl/queue.c graph_impl/graph.c intermediate.c -o runme");
+   // system("gcc graph_impl/queue.c graph_impl/graph.c intermediate.c -o runme");
 
     /*if(remove("intermediate.c") != 0)
         fprintf(stderr, "Error when trying to remove intermediate.c\n");*/
@@ -581,7 +588,7 @@ struct sym * sym_table_look(char * s){
 
 
             if(!st->name){
-                
+                printf("vertex num vale %d\n",new_graph_vertex_num);
                 if(type == NONE){
                     yyerror("Variable not found\n");
                     return st; //TODO SACAME
