@@ -31,4 +31,7 @@ void graph_foreach(Graph g, int source,
         void *data);
 
 void search_bfs(Graph g, int vertex);
+
+void print_graph (Graph g);
+
 #endif
