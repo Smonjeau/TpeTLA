@@ -48,6 +48,7 @@ int state;
 "string"	{return(STRING);}
 "graph" {return(GRAPH);}
 "," {return (COMMA);}
+"_START_" {return (ENTRY_POINT);}
 
 -?[0-9]+	{yylval.val = atoi(yytext) ; return(VALUE);}
 [A-Za-z_][A-Za-z_0-9]*	{yylval.symp = sym_table_look(yytext); return(VAR);}

@@ -58,3 +58,7 @@ language/y.tab.h
 language/lex.yy.c
 
 language/lang
+
+language/intermediate.c
+
+language/runme

@@ -21,7 +21,8 @@ enum node_type{
     EXPRESSION_NODE,
     AND_NODE,
     OR_NODE,
-    NOT_NODE
+    NOT_NODE,
+    ENTRY_POINT_NODE
 
 };
 

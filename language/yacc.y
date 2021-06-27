@@ -14,6 +14,7 @@ int yywrap(){
 struct sym sym_table[MAX_SYMB];
 int yydebug = 1;
 int is_t_var = 1;
+int found_entry_point = 0;
 enum types type;
 enum types value_type;
 int new_graph_vertex_num = 0;
@@ -36,7 +37,7 @@ struct ast_node  * ast;
 struct expression * expr;
 }
 %type <ast> program defs list def type graph_type  condition cond_and cond_or cond_not
-%type <ast> n s print e read while do_while gr_iter if assignment
+%type <ast> n s print e read while do_while gr_iter if assignment entry_point
 %token <symp> VAR
 %token <val> VALUE
 %token <str> STRING_LITERAL
@@ -48,6 +49,7 @@ struct expression * expr;
 %token  DO WHILE  PLUS MINUS MULT DIV ASSIGN_OP MULT_DIV_OPS AND OR NOT TYPE IF ELSE 
 %token  LETTER DECIMAL OPEN_PAR CLOSE_PAR OPEN_BRACKET CLOSE_BRACKET SEMICOLON ID ARROW DOUBLE_ARROW
 %token  GRAPH INT STRING W_GRAPH TREE D_GRAPH  CONS COMMA  PRINT READ LOWER LOWER_EQ GREATER GREATER_EQ EQ N_EQ
+%token  ENTRY_POINT
 
 %%
 
@@ -56,6 +58,7 @@ program:  defs list {root =  add_node(PROGRAM_NODE, $1, $2, NULL);} ;
 
 list: s {$$ = add_node(LIST_NODE, $1, NULL, NULL);}
 	| list s { $$ = add_node(LIST_NODE, $2, $1, NULL);}
+    | { $$ = add_node(LIST_NODE, NULL, NULL, NULL); }
         
 	;
 
@@ -66,7 +69,20 @@ s:	e SEMICOLON {$$ = $1;}
     | print { $$ = $1; }
     | read { $$ = $1; }
     | if {$$ = $1;}
+    | entry_point {$$ = $1;}
     ;
+
+entry_point: ENTRY_POINT {
+                        if(!found_entry_point) {
+                            found_entry_point = 1;
+                            $$ = add_node(ENTRY_POINT_NODE, NULL, NULL, NULL);
+                        } else {
+                            yyerror("Multiple entry points detected");
+                            YYABORT;
+                        }
+
+                    }
+            ;
 
 print: PRINT OPEN_PAR n CLOSE_PAR SEMICOLON {
         $$ = add_node(PRINT_NODE, $3, NULL, NULL);}
@@ -93,10 +109,10 @@ condition:  cond_log {$$ = add_node(COND_NODE,NULL,NULL,$1);}
                     $2->data = FORCE_PAR;
 
                 }
-                if($2->type == COND_NODE){
+                /*if($2->type == COND_NODE){
                     condition * c = (struct condition * ) $2->data;
                     c->use_par = USE_PAR;
-                }
+                }*/
                 $$ =$2;}
     ;
 
@@ -133,7 +149,7 @@ edge:   node_def
 t:  n  {is_t_var = 1; $$ = ((struct sym *)$1->data)->name; } | VALUE { is_t_var = 0; char * buff = malloc(11); sprintf(buff, "%d", $1); $$ = buff;} // | OPEN_PAR expression CLOSE_PAR   {$$ = $2 ;};
     ;
 
-defs:   defs def SEMICOLON {$$ = add_node(DEFS_NODE,$2,$1,NULL);}| def SEMICOLON {$$ = add_node(DEFS_NODE,$1,NULL,NULL);};
+defs:   defs def SEMICOLON {$$ = add_node(DEFS_NODE,$2,$1,NULL);}| def SEMICOLON {$$ = add_node(DEFS_NODE,$1,NULL,NULL);} | entry_point { $$ = $1;};
 
 def:    type n {$$ = add_node(DEF_NODE,$1,$2,NULL);}
         | graph_type OPEN_PAR VALUE CLOSE_PAR n {
@@ -343,12 +359,12 @@ void decode_condition(ast_node * node, FILE * c_out){
 
         case COND_NODE:
             condition_aux = (struct condition*)node->data;
-            if(condition_aux->use_par == USE_PAR){
+            /*if(condition_aux->use_par == USE_PAR){
                     fprintf(c_out,"( ");
-                }
+                }*/
             fprintf(c_out, "%s %s %s", condition_aux->cond1, condition_symbols[condition_aux->cond_type], condition_aux->cond2);
-            if(condition_aux->use_par == USE_PAR)
-                fprintf(c_out," )");
+            /*if(condition_aux->use_par == USE_PAR)
+                fprintf(c_out," )");*/
 
             break;
     }
@@ -366,6 +382,9 @@ void decode_tree(ast_node * node, FILE * c_out) {
                 decode_tree(node->right, c_out);
             if(node->left != NULL)
                 decode_tree(node->left, c_out);
+            break;
+        case ENTRY_POINT_NODE:
+            fprintf(c_out, "entry_point:;");
             break;
 
         case PRINT_NODE:
@@ -412,36 +431,35 @@ void decode_tree(ast_node * node, FILE * c_out) {
             break;
 
         case IF_NODE:
+
             left_var = node->left;
             condition_aux = (condition *)left_var->data;
             fprintf(c_out,"if(");
             decode_condition(left_var,c_out);
-          /*  if (condition_aux->operand == LOG_NOOP)
-                fprintf(c_out, "if(%s %s %s){", condition_aux->cond1, condition_symbols[condition_aux->cond_type], condition_aux->cond2);
-            else if(condition_aux->operand == LOG_AND)
-                fprintf(c_out, "if((%s %s %s ) && (%s %s %s)){", condition_aux->cond1, condition_symbols[condition_aux->cond_type], condition_aux->cond2,condition_aux->cond3,
-                                                                condition_symbols[condition_aux->cond2_type], condition_aux->cond4);
-            */
             fprintf(c_out,"){");
-
-            decode_tree(node->right, c_out);
+            if(node->right != NULL)
+                decode_tree(node->right, c_out);
             fprintf(c_out, "}");
             break;
 
         case WHILE_NODE:
             left_var = node->left;
-            condition_aux = (condition *)left_var->data;
-            fprintf(c_out, "while(%s %s %s){", condition_aux->cond1, condition_symbols[condition_aux->cond_type], condition_aux->cond2);
-            decode_tree(node->right, c_out);
+            fprintf(c_out, "while(");
+            decode_condition(left_var,c_out);
+            fprintf(c_out,"){");
+            if(node->right != NULL)
+                decode_tree(node->right, c_out);
             fprintf(c_out, "}");
             break;
 
         case DO_WHILE_NODE:
             left_var = node->left;
-            condition_aux = (condition *)left_var->data;
             fprintf(c_out, "do {");
-            decode_tree(node->right, c_out);
-            fprintf(c_out, "} while(%s %s %s);", condition_aux->cond1, condition_symbols[condition_aux->cond_type], condition_aux->cond2);
+            if(node->right != NULL)
+                decode_tree(node->right, c_out);
+            fprintf(c_out, "} while(");
+            decode_condition(left_var,c_out);
+            fprintf(c_out,");");
             break;
     }
     
@@ -469,6 +487,8 @@ void decode_defs(ast_node * node, FILE * c_out) {
                 break;
         }
 
+    }else if(node->type == ENTRY_POINT_NODE) {
+        fprintf(c_out, "entry_point:;");
     }
 }
 
@@ -488,6 +508,10 @@ int main(int argc, char *argv[]){
     }
 
     printf("Fin del parsing\n");
+    if(!found_entry_point) {
+        fprintf(stderr, "Entry point not found.\n");
+        exit(1);
+    }
     if(root !=NULL){
         FILE * c_out = fopen("intermediate.c", "w+");
         if(c_out == NULL) {
@@ -497,7 +521,7 @@ int main(int argc, char *argv[]){
 
         fputs("#include \"graph_impl/graph.h\"\n", c_out);
         fputs("#include <stdio.h>\n", c_out);
-        fputs("int main() {", c_out);
+        fputs("int main(){goto entry_point;", c_out);
 
 
         if(root->left != NULL){
