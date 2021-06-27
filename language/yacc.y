@@ -8,6 +8,9 @@
 #include "statement.h"
 int yylex();
 void yyerror(char *s);
+int yywrap(){
+    return 1;
+}
 struct sym sym_table[MAX_SYMB];
 int yydebug = 1;
 int is_t_var = 1;
@@ -31,18 +34,19 @@ struct condition * cond;
 struct ast_node  * ast;
 struct expression * expr;
 }
-%type <ast> program defs list def type graph_type gr_iter_type condition
+%type <ast> program defs list def type graph_type condition
 %type <ast> n s print e read while do_while gr_iter if assignment
 %token <symp> VAR
 %token <val> VALUE
 %token <str> STRING_LITERAL
+%token <str> DFS BFS
 %type<val> operation expression
 %type <cond> cond_log cond_and cond_or
 %type <str> t
 
 %token  DO WHILE  PLUS MINUS MULT DIV ASSIGN_OP MULT_DIV_OPS AND OR NOT TYPE IF ELSE 
 %token  LETTER DECIMAL OPEN_PAR CLOSE_PAR OPEN_BRACKET CLOSE_BRACKET SEMICOLON ID ARROW DOUBLE_ARROW
-%token  GRAPH DFS BFS INT STRING W_GRAPH TREE D_GRAPH  CONS COMMA  PRINT READ LOWER LOWER_EQ GREATER GREATER_EQ EQ N_EQ
+%token  GRAPH INT STRING W_GRAPH TREE D_GRAPH  CONS COMMA  PRINT READ LOWER LOWER_EQ GREATER GREATER_EQ EQ N_EQ
 
 %%
 
@@ -115,7 +119,9 @@ t:  n  {is_t_var = 1; $$ = ((struct sym *)$1->data)->name; } | VALUE { is_t_var 
 defs:   defs def SEMICOLON {$$ = add_node(DEFS_NODE,$2,$1,NULL);}| def SEMICOLON {$$ = add_node(DEFS_NODE,$1,NULL,NULL);};
 
 def:    type n {$$ = add_node(DEF_NODE,$1,$2,NULL);}
-        | graph_type OPEN_PAR VALUE CLOSE_PAR n {new_graph_vertex_num = $3; ;$$ = add_node(DEF_NODE,$1,$5,NULL);}
+        | graph_type OPEN_PAR VALUE CLOSE_PAR n {
+            $$ = add_node(DEF_NODE,$1,$5,$3);
+            }
         ;
 
 assignment:     n ASSIGN_OP expression {
@@ -189,10 +195,15 @@ operation:      expression PLUS     expression { $$ = $1 + $3; /*$$ = create_ope
            ;
 
 
-gr_iter_type: DFS | BFS ;
-
-gr_iter:    gr_iter_type OPEN_PAR n SEMICOLON n CLOSE_PAR s
-        |   gr_iter_type OPEN_PAR n SEMICOLON n CLOSE_PAR OPEN_BRACKET list CLOSE_BRACKET
+gr_iter:    DFS OPEN_PAR n SEMICOLON t CLOSE_PAR OPEN_BRACKET list CLOSE_BRACKET {
+                    
+                    ast_node * aux = add_node(GR_ITER_COND_NODE, $3, NULL, $5);
+                    $$ = add_node(GR_ITER_NODE, aux, $8, $1);
+            }
+        |   BFS OPEN_PAR n SEMICOLON n CLOSE_PAR OPEN_BRACKET list CLOSE_BRACKET {
+                    ast_node * aux = add_node(GR_ITER_COND_NODE, $3, $5, NULL);
+                    $$ = add_node(GR_ITER_NODE, aux, $8, $1);
+            }
 
         ;
 type: INT {type = T_INTEGER ; enum types * aux = malloc(sizeof(int)); *aux= T_INTEGER; $$ = add_node(TYPE_NODE,NULL,NULL,aux);} |

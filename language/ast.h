@@ -6,6 +6,8 @@ enum node_type{
     IF_NODE,
     WHILE_NODE,
     DO_WHILE_NODE,
+    GR_ITER_NODE,
+    GR_ITER_COND_NODE,
     DEFS_NODE,
     DEF_NODE,
     TYPE_NODE,
