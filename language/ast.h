@@ -18,7 +18,10 @@ enum node_type{
     STMT_NODE,
     COND_NODE,
     ASSIGN_NODE,
-    EXPRESSION_NODE
+    EXPRESSION_NODE,
+    AND_NODE,
+    OR_NODE,
+    NOT_NODE
 
 };
 

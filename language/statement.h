@@ -36,11 +36,27 @@ enum condition_type{
     COND_GREATER,
     COND_GREATER_EQ,
 };
+enum logical_operand{
+    LOG_NOOP = 0,
+    LOG_NOT,
+    LOG_AND,
+    LOG_OR
+};
+
+enum parenthesis{
+    DONT_USE_PAR = 0,
+    USE_PAR,
+};
 
 typedef struct condition{
     int is_boolean;          //Indica si la operacion es solo un bool
     enum condition_type cond_type;
     char * cond1, * cond2;
+    char * cond3, * cond4; //para and y or
+    enum logical_operand operand;
+    enum condition_type cond2_type;
+    enum parenthesis use_par;
+
 }condition;
 /*
 typedef struct statement {

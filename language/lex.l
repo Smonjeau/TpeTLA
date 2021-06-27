@@ -29,7 +29,9 @@ int state;
 
 "print"	{return(PRINT);}
 "read"	{return(READ);}
-"and" | "or" | "not" {return(LOGICAL_OPS);}
+"and" {return(AND);}
+"or" {return(OR);}
+"not" {return(NOT);}
 "+"         {return(PLUS);}
 "-"		{return(MINUS);}
 "*"	{return(MULT);}

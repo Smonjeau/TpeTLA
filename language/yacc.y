@@ -21,6 +21,7 @@ int temp_edges_qty = 0;
 struct g_edge * temp_edges = NULL;
 struct g_edge temp_edge;
 struct sym * last_sym = NULL;
+#define FORCE_PAR 0x1
 int syms_counter = 0;
 ast_node * root;
 #define NODE_IN_RANGE(n,max) (n >= 0 && n < max)
@@ -34,14 +35,14 @@ struct condition * cond;
 struct ast_node  * ast;
 struct expression * expr;
 }
-%type <ast> program defs list def type graph_type condition
+%type <ast> program defs list def type graph_type  condition cond_and cond_or cond_not
 %type <ast> n s print e read while do_while gr_iter if assignment
 %token <symp> VAR
 %token <val> VALUE
 %token <str> STRING_LITERAL
 %token <str> DFS BFS
 %type<val> operation expression
-%type <cond> cond_log cond_and cond_or
+%type <cond> cond_log  
 %type <str> t
 
 %token  DO WHILE  PLUS MINUS MULT DIV ASSIGN_OP MULT_DIV_OPS AND OR NOT TYPE IF ELSE 
@@ -83,8 +84,20 @@ if:     IF OPEN_PAR condition CLOSE_PAR OPEN_BRACKET list CLOSE_BRACKET
 
                 ;
 condition:  cond_log {$$ = add_node(COND_NODE,NULL,NULL,$1);}
-    | cond_and {$$ = add_node(COND_NODE,NULL,NULL,$1);}
-    | cond_or {$$ = add_node(COND_NODE,NULL,NULL,$1);}
+    | cond_and {$$ = $1;}
+    | cond_or {$$ = $1;}
+    | cond_not {$$ = $1;}
+    |  OPEN_PAR condition CLOSE_PAR {
+
+                if($2->type  == OR_NODE || $2->type == AND_NODE){
+                    $2->data = FORCE_PAR;
+
+                }
+                if($2->type == COND_NODE){
+                    condition * c = (struct condition * ) $2->data;
+                    c->use_par = USE_PAR;
+                }
+                $$ =$2;}
     ;
 
 cond_log:   t EQ t {condition * c = malloc(sizeof(struct condition)); c->cond_type = COND_EQ; c->cond1 = $1; c->cond2 = $3; $$ = c;}
@@ -94,9 +107,13 @@ cond_log:   t EQ t {condition * c = malloc(sizeof(struct condition)); c->cond_ty
         |   t GREATER t {condition * c = malloc(sizeof(struct condition)); c->cond_type = COND_GREATER; c->cond1 = $1; c->cond2 = $3; $$ =c;}
         |   t GREATER_EQ t {condition * c = malloc(sizeof(struct condition)); c->cond_type = COND_GREATER_EQ; c->cond1 = $1; c->cond2 = $3; $$ =c;}
 ;
-cond_and:   cond_log AND cond_log ;
+cond_and:   condition AND condition {ast_node * node = add_node(AND_NODE,$1,$3,NULL); $$ = node; };
 
-cond_or:    cond_log OR cond_log;
+cond_or:    condition OR condition  {ast_node * node = add_node(OR_NODE,$1,$3,NULL); $$ = node;};
+
+cond_not:   NOT condition {$$ = add_node(NOT_NODE,$2,NULL,NULL);};
+
+         
 
 
  e: assignment {$$ = $1;}
@@ -120,7 +137,9 @@ defs:   defs def SEMICOLON {$$ = add_node(DEFS_NODE,$2,$1,NULL);}| def SEMICOLON
 
 def:    type n {$$ = add_node(DEF_NODE,$1,$2,NULL);}
         | graph_type OPEN_PAR VALUE CLOSE_PAR n {
-            $$ = add_node(DEF_NODE,$1,$5,$3);
+            int * aux = malloc(sizeof(int));
+            *aux = $3;
+            $$ = add_node(DEF_NODE,$1,$5,aux);
             }
         ;
 
@@ -278,6 +297,63 @@ void free_resources(){
     }
 }
 
+void decode_condition(ast_node * node, FILE * c_out){
+    condition * condition_aux;
+    switch(node->type){
+        case AND_NODE:
+            if(node->left != NULL){
+                if(node->data == FORCE_PAR){
+                    fprintf(c_out,"( ");
+                }
+                decode_condition(node->left,c_out);
+                fprintf(c_out," && ");
+            }
+            if (node->right != NULL){
+                decode_condition(node->right,c_out);
+                if (node->data == FORCE_PAR){
+
+                    fprintf(c_out,")");
+                }
+            }
+            break;
+        case OR_NODE:
+            if(node->left != NULL){
+                if(node->data == FORCE_PAR){
+                    fprintf(c_out,"( ");
+                }
+                decode_condition(node->left,c_out);
+                fprintf(c_out," || ");
+            }
+            if (node->right != NULL){
+                decode_condition(node->right,c_out);
+                if (node->data == FORCE_PAR){
+
+                    fprintf(c_out,")");
+                }
+            }
+            break;    
+
+        case NOT_NODE:
+            if(node->left != NULL){
+                fprintf(c_out,"! ");
+                decode_condition(node->left,c_out);
+                fprintf(c_out,"");
+            }
+            break;
+
+        case COND_NODE:
+            condition_aux = (struct condition*)node->data;
+            if(condition_aux->use_par == USE_PAR){
+                    fprintf(c_out,"( ");
+                }
+            fprintf(c_out, "%s %s %s", condition_aux->cond1, condition_symbols[condition_aux->cond_type], condition_aux->cond2);
+            if(condition_aux->use_par == USE_PAR)
+                fprintf(c_out," )");
+
+            break;
+    }
+}
+
 void decode_tree(ast_node * node, FILE * c_out) {
     enum types var_type;
     ast_node * left_var, *right_var;
@@ -338,10 +414,19 @@ void decode_tree(ast_node * node, FILE * c_out) {
         case IF_NODE:
             left_var = node->left;
             condition_aux = (condition *)left_var->data;
-            fprintf(c_out, "if(%s %s %s){", condition_aux->cond1, condition_symbols[condition_aux->cond_type], condition_aux->cond2);
+            fprintf(c_out,"if(");
+            decode_condition(left_var,c_out);
+          /*  if (condition_aux->operand == LOG_NOOP)
+                fprintf(c_out, "if(%s %s %s){", condition_aux->cond1, condition_symbols[condition_aux->cond_type], condition_aux->cond2);
+            else if(condition_aux->operand == LOG_AND)
+                fprintf(c_out, "if((%s %s %s ) && (%s %s %s)){", condition_aux->cond1, condition_symbols[condition_aux->cond_type], condition_aux->cond2,condition_aux->cond3,
+                                                                condition_symbols[condition_aux->cond2_type], condition_aux->cond4);
+            */
+            fprintf(c_out,"){");
+
             decode_tree(node->right, c_out);
             fprintf(c_out, "}");
-            ;
+            break;
 
         case WHILE_NODE:
             left_var = node->left;
@@ -349,7 +434,7 @@ void decode_tree(ast_node * node, FILE * c_out) {
             fprintf(c_out, "while(%s %s %s){", condition_aux->cond1, condition_symbols[condition_aux->cond_type], condition_aux->cond2);
             decode_tree(node->right, c_out);
             fprintf(c_out, "}");
-            ;
+            break;
 
         case DO_WHILE_NODE:
             left_var = node->left;
@@ -357,7 +442,7 @@ void decode_tree(ast_node * node, FILE * c_out) {
             fprintf(c_out, "do {");
             decode_tree(node->right, c_out);
             fprintf(c_out, "} while(%s %s %s);", condition_aux->cond1, condition_symbols[condition_aux->cond_type], condition_aux->cond2);
-            ;
+            break;
     }
     
     
