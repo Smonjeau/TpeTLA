@@ -64,7 +64,7 @@ struct expression * expr;
 
 %%
 
-program:  defs list {root =  add_node(PROGRAM_NODE, $1, $2, NULL);} | defs {root= add_node(PROGRAM_NODE,$1,NULL,NULL);};
+program:  defs list {root =  add_node(PROGRAM_NODE, $1, $2, NULL);} | defs {root= add_node(PROGRAM_NODE,$1,add_node(LIST_NODE, NULL, NULL, NULL),NULL);};
 
 
 list: s {$$ = add_node(LIST_NODE, $1, NULL, NULL);}
@@ -103,11 +103,15 @@ read: READ OPEN_PAR n CLOSE_PAR SEMICOLON { $$ = add_node(READ_NODE, $3, NULL, N
         ;
 
 while:  WHILE OPEN_PAR condition CLOSE_PAR OPEN_BRACKET list CLOSE_BRACKET  {$$ = add_node(WHILE_NODE,$3,$6,NULL);}
+        | WHILE OPEN_PAR condition CLOSE_PAR OPEN_BRACKET CLOSE_BRACKET {$$ = add_node(WHILE_NODE, $3, add_node(LIST_NODE, NULL, NULL, NULL), NULL);}
         ;
 do_while:   DO OPEN_BRACKET list CLOSE_BRACKET WHILE OPEN_PAR condition CLOSE_PAR SEMICOLON {$$ = add_node(DO_WHILE_NODE,$7,$3,NULL);}
+        | DO OPEN_BRACKET CLOSE_BRACKET WHILE OPEN_PAR condition CLOSE_PAR SEMICOLON {$$ = add_node(DO_WHILE_NODE, $6, add_node(LIST_NODE, NULL, NULL, NULL), NULL);}
     ;
 if:     IF OPEN_PAR condition CLOSE_PAR OPEN_BRACKET list CLOSE_BRACKET
-                {$$ = add_node(IF_NODE, $3, $6, NULL);/*$$ = create_statement($3, $6, ST_IF); */}
+                {$$ = add_node(IF_NODE, $3, $6, NULL);}
+        | IF OPEN_PAR condition CLOSE_PAR OPEN_BRACKET CLOSE_BRACKET
+                {$$ = add_node(IF_NODE, $3, add_node(LIST_NODE, NULL, NULL, NULL), NULL);}
 
                 ;
 condition:  cond_log {$$ = add_node(COND_NODE,NULL,NULL,$1);}
@@ -328,13 +332,17 @@ operation:      t PLUS     t {
 
 
 gr_iter:    DFS OPEN_PAR n COMMA t COMMA n CLOSE_PAR OPEN_BRACKET list CLOSE_BRACKET {
-                    
 
-                    //ast_node * aux = add_node(GR_ITER_COND_NODE, $3, NULL, $5);
                     struct gr_iteration * aux = malloc(sizeof(struct gr_iteration)); //FREEEEEEEEE
                     aux->init = $5;
                     aux->var = (struct sym * ) $7->data;
                     $$ = add_node(DFS_NODE, $3, $10, aux);
+            }
+        | DFS OPEN_PAR n COMMA t COMMA n CLOSE_PAR OPEN_BRACKET CLOSE_BRACKET {
+                    struct gr_iteration * aux = malloc(sizeof(struct gr_iteration)); //FREEEEEEEEE
+                    aux->init = $5;
+                    aux->var = (struct sym * ) $7->data;
+                    $$ = add_node(DFS_NODE, $3, add_node(LIST_NODE, NULL, NULL, NULL), aux);
             }
         |   BFS OPEN_PAR n COMMA t COMMA n CLOSE_PAR OPEN_BRACKET list CLOSE_BRACKET {
                     struct gr_iteration * aux = malloc(sizeof(struct gr_iteration)); //FREEEEEEEEE
@@ -342,6 +350,13 @@ gr_iter:    DFS OPEN_PAR n COMMA t COMMA n CLOSE_PAR OPEN_BRACKET list CLOSE_BRA
                     aux->var = (struct sym * ) $7->data;
                     $$ = add_node(BFS_NODE, $3, $10, aux);
             }
+        | BFS OPEN_PAR n COMMA t COMMA n CLOSE_PAR OPEN_BRACKET CLOSE_BRACKET {
+                    struct gr_iteration * aux = malloc(sizeof(struct gr_iteration)); //FREEEEEEEEE
+                    aux->init = $5;
+                    aux->var = (struct sym * ) $7->data;
+                    $$ = add_node(BFS_NODE, $3, add_node(LIST_NODE, NULL, NULL, NULL), aux);
+            }
+
 
         ;
 type: INT {type = T_INTEGER ; enum types * aux = malloc(sizeof(int)); *aux= T_INTEGER; $$ = add_node(TYPE_NODE,NULL,NULL,aux);} |
@@ -607,6 +622,13 @@ void decode_tree(ast_node * node, FILE * c_out) {
             left_sym = (struct sym *)left_var->data;
 
             griter = (struct gr_iteration * ) node->data;
+            if(!isdigit(griter->init[0])){
+                struct sym * init_sym = sym_table_look(griter->init);
+                if(init_sym->type != T_INTEGER)
+                    yyerror("DFS root variable must be int.");
+            }
+            if(griter->var->type != T_INTEGER)
+                yyerror("DFS iterator variable must be int.");
             fprintf(c_out,"s = search_info_create(%s);dfs(s, %s);\n",left_sym->name,griter->init);
             fprintf(c_out,"i = 0; while(i < s->reached) { %s = s->preorder[i];",griter->var->name);
             decode_tree(node->right,c_out);
@@ -620,6 +642,13 @@ void decode_tree(ast_node * node, FILE * c_out) {
             left_sym = (struct sym *)left_var->data;
 
             griter = (struct gr_iteration * ) node->data;
+            if(!isdigit(griter->init[0])){
+                struct sym * init_sym = sym_table_look(griter->init);
+                if(init_sym->type != T_INTEGER)
+                    yyerror("BFS root variable must be int.");
+            }
+            if(griter->var->type != T_INTEGER)
+                yyerror("BFS iterator variable must be int.");
             fprintf(c_out," s = search_info_create(%s);bfs(s, %s);\n",left_sym->name,griter->init);
             fprintf(c_out,"i = 0; while(i < s->reached) { %s = s->preorder[i];",griter->var->name);
             decode_tree(node->right,c_out);
