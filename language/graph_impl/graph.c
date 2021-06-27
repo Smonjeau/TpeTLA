@@ -62,6 +62,9 @@ graph_destroy(Graph g)
 void
 graph_add_edge(Graph g, int u, int v)
 {
+
+    if(graph_has_edge(g,u,v))
+        return;
     assert(u >= 0);
     assert(u < g->n);
     assert(v >= 0);
