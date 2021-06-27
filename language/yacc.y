@@ -10,6 +10,7 @@ int yylex();
 void yyerror(char *s);
 struct sym sym_table[MAX_SYMB];
 int yydebug = 1;
+int is_t_var = 1;
 enum types type;
 enum types value_type;
 int new_graph_vertex_num = 0;
@@ -26,21 +27,20 @@ ast_node * root;
 int val;
 struct sym *symp;
 char * str;
-enum condition_type condition_t;
-condition * cond;
+struct condition * cond;
 struct ast_node  * ast;
+struct expression * expr;
 }
-%type <ast> program defs list def type graph_type gr_iter_type
+%type <ast> program defs list def type graph_type gr_iter_type condition
 %type <ast> n s print e read while do_while gr_iter if assignment
 %token <symp> VAR
 %token <val> VALUE
 %token <str> STRING_LITERAL
-%type<val> operation
-%type <val> t
+%type<val> operation expression
 %type <cond> cond_log cond_and cond_or
+%type <str> t
 
-%type <val> expression
-%token  DO WHILE  PLUS MINUS MULT DIV ASSIGN_OP MULT_DIV_OPS AND OR NOT   TYPE IF ELSE 
+%token  DO WHILE  PLUS MINUS MULT DIV ASSIGN_OP MULT_DIV_OPS AND OR NOT TYPE IF ELSE 
 %token  LETTER DECIMAL OPEN_PAR CLOSE_PAR OPEN_BRACKET CLOSE_BRACKET SEMICOLON ID ARROW DOUBLE_ARROW
 %token  GRAPH DFS BFS INT STRING W_GRAPH TREE D_GRAPH  CONS COMMA  PRINT READ LOWER LOWER_EQ GREATER GREATER_EQ EQ N_EQ
 
@@ -54,29 +54,28 @@ list: s {$$ = add_node(LIST_NODE, $1, NULL, NULL);}
         
 	;
 
-s:	e SEMICOLON 
+s:	e SEMICOLON {$$ = $1;}
 	| while {$$ = $1 ;}
-    | do_while
+    | do_while {$$ = $1;}
     | gr_iter
     | print { $$ = $1; }
-    | read
-    | if
+    | read { $$ = $1; }
+    | if {$$ = $1;}
     ;
 
 print: PRINT OPEN_PAR n CLOSE_PAR SEMICOLON {
         $$ = add_node(PRINT_NODE, $3, NULL, NULL);}
         ;
 
-read: READ OPEN_PAR n CLOSE_PAR SEMICOLON {printf("read en %s\n",(char*)$3->data);}
+read: READ OPEN_PAR n CLOSE_PAR SEMICOLON { $$ = add_node(READ_NODE, $3, NULL, NULL);}
         ;
 
-while:  WHILE OPEN_PAR condition CLOSE_PAR OPEN_BRACKET list CLOSE_BRACKET  {$$ = add_node(WHILE_NODE,$3,$6,NULL)}
+while:  WHILE OPEN_PAR condition CLOSE_PAR OPEN_BRACKET list CLOSE_BRACKET  {$$ = add_node(WHILE_NODE,$3,$6,NULL);}
         ;
-do_while:   DO s WHILE OPEN_PAR condition CLOSE_PAR
-    |       DO s WHILE OPEN_PAR condition CLOSE_PAR OPEN_BRACKET list CLOSE_BRACKET
+do_while:   DO OPEN_BRACKET list CLOSE_BRACKET WHILE OPEN_PAR condition CLOSE_PAR SEMICOLON {$$ = add_node(DO_WHILE_NODE,$7,$3,NULL);}
     ;
 if:     IF OPEN_PAR condition CLOSE_PAR OPEN_BRACKET list CLOSE_BRACKET
-                {/*$$ = create_statement($3, $6, ST_IF); */}
+                {$$ = add_node(IF_NODE, $3, $6, NULL);/*$$ = create_statement($3, $6, ST_IF); */}
 
                 ;
 condition:  cond_log {$$ = add_node(COND_NODE,NULL,NULL,$1);}
@@ -84,20 +83,19 @@ condition:  cond_log {$$ = add_node(COND_NODE,NULL,NULL,$1);}
     | cond_or {$$ = add_node(COND_NODE,NULL,NULL,$1);}
     ;
 
-cond_log:   expression EQ expression {condition * c = malloc(struct condition); c->cond_type = COND_EQ; c->cond1 = $1; c->cond2 = $3; $$ = c;}
-        |   expression N_EQ expression {condition * c = malloc(struct condition); c->cond_type = COND_NE; c->cond1 = $1; c->cond2 = $3; $$ =c;}
-        |   expression LOWER expression {condition * c = malloc(struct condition); c->cond_type = COND_LOWER; c->cond1 = $1; c->cond2 = $3; $$ =c;} 
-        |   expression LOWER_EQ expression {condition * c = malloc(struct condition); c->cond_type = COND_LOWER_EQ; c->cond1 = $1; c->cond2 = $3; $$ =c;}
-        |   expression GREATER expression {condition * c = malloc(struct condition); c->cond_type = COND_GREATER; c->cond1 = $1; c->cond2 = $3; $$ =c;}
-        |   expression GREATER_EQ expression {condition * c = malloc(struct condition); c->cond_type = COND_GREATER_EQ; c->cond1 = $1; c->cond2 = $3; $$ =c;}
+cond_log:   t EQ t {condition * c = malloc(sizeof(struct condition)); c->cond_type = COND_EQ; c->cond1 = $1; c->cond2 = $3; $$ = c;}
+        |   t N_EQ t {condition * c = malloc(sizeof(struct condition)); c->cond_type = COND_NE; c->cond1 = $1; c->cond2 = $3; $$ =c;}
+        |   t LOWER t {condition * c = malloc(sizeof(struct condition)); c->cond_type = COND_LOWER; c->cond1 = $1; c->cond2 = $3; $$ =c;} 
+        |   t LOWER_EQ t {condition * c = malloc(sizeof(struct condition)); c->cond_type = COND_LOWER_EQ; c->cond1 = $1; c->cond2 = $3; $$ =c;}
+        |   t GREATER t {condition * c = malloc(sizeof(struct condition)); c->cond_type = COND_GREATER; c->cond1 = $1; c->cond2 = $3; $$ =c;}
+        |   t GREATER_EQ t {condition * c = malloc(sizeof(struct condition)); c->cond_type = COND_GREATER_EQ; c->cond1 = $1; c->cond2 = $3; $$ =c;}
 ;
 cond_and:   cond_log AND cond_log ;
 
 cond_or:    cond_log OR cond_log;
 
 
- e:  def
-    | assignment 
+ e: assignment {$$ = $1;}
     ;
 
 edges:
@@ -111,7 +109,8 @@ edge:   node_def
         ;
 
 
-t:  VAR  {$$ = $1->content.int_value}| VALUE {$$ = $1;} | OPEN_PAR expression CLOSE_PAR   {$$ = $2 ;};
+t:  n  {is_t_var = 1; $$ = ((struct sym *)$1->data)->name; } | VALUE { is_t_var = 0; char * buff = malloc(11); sprintf(buff, "%d", $1); $$ = buff;} // | OPEN_PAR expression CLOSE_PAR   {$$ = $2 ;};
+    ;
 
 defs:   defs def SEMICOLON {$$ = add_node(DEFS_NODE,$2,$1,NULL);}| def SEMICOLON {$$ = add_node(DEFS_NODE,$1,NULL,NULL);};
 
@@ -119,19 +118,34 @@ def:    type n {$$ = add_node(DEF_NODE,$1,$2,NULL);}
         | graph_type OPEN_PAR VALUE CLOSE_PAR n {new_graph_vertex_num = $3; ;$$ = add_node(DEF_NODE,$1,$5,NULL);}
         ;
 
-assignment:     n ASSIGN_OP expression {sym_table_look($1->name)->type == T_INTEGER ? $1->content.int_value = $3 : yyerror("Error al asignar int");}
+assignment:     n ASSIGN_OP expression {
+                                ((struct sym *)$1->data)->type == T_INTEGER ? ((struct sym *)$1->data)->content.int_value = $3 : yyerror("Error al asignar int");
+                                int * int_value = malloc(sizeof(int)); // FREEAME
+                                *int_value = $3;
+                                ast_node * int_value_node = add_node(EXPRESSION_NODE, NULL, NULL, int_value);
+                                ast_node * node = add_node(ASSIGN_NODE, $1, int_value_node, NULL);
+                                $$ = node;
+                            }
             |   n ASSIGN_OP  STRING_LITERAL {
-                                        if(sym_table_look($1->name)->type == T_STRING) {
-                                            int len = strlen($3) + 1; $1->content.string_value = malloc(len); //TODO FREEEEEEEEEE
-                                            strcpy($1->content.string_value,$3);
-                                            $1->content.string_value[len - 1] = 0;
-                                            printf("STRING\n");
+                                        if(((struct sym *)$1->data)->type == T_STRING) {
+                                            int len = strlen($3) + 1; ((struct sym *)$1->data)->content.string_value = malloc(len);
+                                            strcpy(((struct sym *)$1->data)->content.string_value,$3);
+                                            ((struct sym *)$1->data)->content.string_value[len - 1] = 0;
+                                            
+
+                                            char * new_str_literal = malloc(len); // FREEAME
+                                            strcpy(new_str_literal,$3);
+                                            ast_node * int_value_node = add_node(EXPRESSION_NODE, NULL, NULL, new_str_literal);
+                                            ast_node * node = add_node(ASSIGN_NODE, $1, int_value_node, NULL);
+                                            $$ = node;
+
+
                                         } else {
                                             yyerror("Error al asignar string");
                                         }
                                         
                                     }
-            | n ASSIGN_OP OPEN_BRACKET edges CLOSE_BRACKET{ struct sym * s = sym_table_look($1->name);
+            | n ASSIGN_OP OPEN_BRACKET edges CLOSE_BRACKET{ struct sym * s = (struct sym *)$1->data;
                                                     if(s->type == T_GRAPH){
                                                         int nqty = s->content.graph_data.nodes_qty;
                                                         printf("inicializando grafito\n");
@@ -154,12 +168,24 @@ assignment:     n ASSIGN_OP expression {sym_table_look($1->name)->type == T_INTE
             ;
 
 expression:     operation {$$ = $1;}
-            |   t {$$ = $1;}
+            |   t {
+                    if(is_t_var) {
+                        struct sym * var_sym = sym_table_look($1);
+                        if(var_sym->type != T_INTEGER) {
+                            yyerror("Only int vars allowed in expressions");
+                            YYABORT;
+                        }
+                        $$ = var_sym->content.int_value;
+                    } else {
+                        $$ = atoi($1);
+                    }
+                    
+                }
             ;
 operation:      expression PLUS     expression { $$ = $1 + $3; /*$$ = create_operation(OP_SUM, $1, $3);*/}
            |    expression MINUS    expression { $$ = $1 - $3;/*$$ = create_operation(OP_MINUS, $1, $3);*/}
            |    expression MULT     expression {$$ = $1 * $3; }
-           |    expression DIV      expression { $$ = $1 / $3;)}
+           |    expression DIV      expression { $$ = $1 / $3;}
            ;
 
 
@@ -177,7 +203,7 @@ graph_type: GRAPH {type=T_GRAPH; enum types * aux = malloc(sizeof(int)); *aux= T
 
 //vertex_num: OPEN_PAR VALUE CLOSE_PAR { new_graph_vertex_num = $2; };
 
-n:  VAR {char * aux = strdup($1->name); $$ = add_node(VAR_NODE,NULL,NULL,aux);};
+n:  VAR {/*char * aux = strdup($1->name);*/ $$ = add_node(VAR_NODE,NULL,NULL,$1);};
 
 
 node_defs:  node_def
@@ -242,27 +268,88 @@ void free_resources(){
 }
 
 void decode_tree(ast_node * node, FILE * c_out) {
-    /*if(node->right != NULL)
+    enum types var_type;
+    ast_node * left_var, *right_var;
+    struct sym * left_sym;
+    condition * condition_aux;
+
+    switch(node->type) {
+        case LIST_NODE:
+            if(node->right != NULL)
+                decode_tree(node->right, c_out);
+            if(node->left != NULL)
+                decode_tree(node->left, c_out);
+            break;
+
+        case PRINT_NODE:
+            if(node->left != NULL && node->left->type == VAR_NODE) {
+                var_type = ((struct sym *)node->left->data)->type;
+                switch (var_type) {
+                    case T_STRING:
+                        fprintf(c_out, "printf(\"%%s\", %s);", ((struct sym *)node->left->data)->name);
+                        break;
+                    case T_INTEGER:
+                        fprintf(c_out, "printf(\"%%d\", %s);", ((struct sym *)node->left->data)->name);
+                        break;
+                }
+                
+            }
+            break;
+
+        case ASSIGN_NODE:
+            left_var = node->left;
+            right_var = node->right;
+            left_sym = (struct sym *)left_var->data;
+            switch(left_sym->type) {
+                case T_INTEGER:
+                    fprintf(c_out, "%s = %d;", left_sym->name, *((int *)right_var->data));
+                    break;
+                case T_STRING:
+                    fprintf(c_out, "%s = %s;", left_sym->name, (char *)right_var->data);
+                    break;
+            }
+                
+            break;
+
+        case READ_NODE:
+            left_var = node->left;
+            left_sym = (struct sym *)left_var->data;
+            switch(left_sym->type) {
+                case T_INTEGER:
+                    fprintf(c_out, "scanf(\"%%d\", &%s);", left_sym->name);
+                    break;
+                case T_STRING:
+                    fprintf(c_out, "scanf(\"%%s\", %s);", left_sym->name);
+                    break;
+            }
+            break;
+
+        case IF_NODE:
+            left_var = node->left;
+            condition_aux = (condition *)left_var->data;
+            fprintf(c_out, "if(%s %s %s){", condition_aux->cond1, condition_symbols[condition_aux->cond_type], condition_aux->cond2);
             decode_tree(node->right, c_out);
-    if(node->left != NULL){
-        enum node_type t = node->left->type;
-        char * var_name = (char *) node->left->right->data;
-        struct sym * read_sym;
-        switch(t) {
-            case T_GRAPH:
-                read_sym = sym_table_look(var_name); //TODO chequear
-                fprintf(c_out, "Graph %s;%s=graph_create(%d);", var_name, var_name, read_sym->content.graph_data.nodes_qty);
-                break;
-            case T_INTEGER:
-                fprintf(c_out, "int %s;", var_name);
-                break;
-            case T_STRING:
-                fprintf(c_out, "char * %s;", var_name);
-                break;
-        }
-        free(node->left->left->data);
-        free(var_name);       
-    }*/
+            fprintf(c_out, "}");
+            ;
+
+        case WHILE_NODE:
+            left_var = node->left;
+            condition_aux = (condition *)left_var->data;
+            fprintf(c_out, "while(%s %s %s){", condition_aux->cond1, condition_symbols[condition_aux->cond_type], condition_aux->cond2);
+            decode_tree(node->right, c_out);
+            fprintf(c_out, "}");
+            ;
+
+        case DO_WHILE_NODE:
+            left_var = node->left;
+            condition_aux = (condition *)left_var->data;
+            fprintf(c_out, "do {");
+            decode_tree(node->right, c_out);
+            fprintf(c_out, "} while(%s %s %s);", condition_aux->cond1, condition_symbols[condition_aux->cond_type], condition_aux->cond2);
+            ;
+    }
+    
+    
 }
 
 void decode_defs(ast_node * node, FILE * c_out) {
@@ -270,11 +357,11 @@ void decode_defs(ast_node * node, FILE * c_out) {
             decode_defs(node->right, c_out);
     if(node->left != NULL && node->left->type == DEF_NODE ){
         enum types t = *((int *) node->left->left->data);
-        char * var_name = (char *) node->left->right->data;
+        char * var_name = ((struct sym *) node->left->right->data)->name;
         struct sym * read_sym;
         switch(t) {
             case T_GRAPH:
-                read_sym = sym_table_look(var_name); //TODO chequear
+                read_sym = (struct sym *) node->left->right->data;
                 fprintf(c_out, "Graph %s;%s=graph_create(%d);", var_name, var_name, read_sym->content.graph_data.nodes_qty);
 
                 break;
@@ -285,15 +372,12 @@ void decode_defs(ast_node * node, FILE * c_out) {
                 fprintf(c_out, "char * %s;", var_name);
                 break;
         }
-        free(node->left->left->data);
-        free(var_name);       
 
     }
 }
 
 int main(int argc, char *argv[]){
 	
-    ast_node * nodito;
     if(argc == 2){
         //leemos del archivo
         yyin = fopen(argv[1],"r");
@@ -334,9 +418,9 @@ int main(int argc, char *argv[]){
 
     system("gcc graph_impl/queue.c graph_impl/graph.c intermediate.c -o runme");
 
-    if(remove("intermediate.c") != 0)
-        fprintf(stderr, "Error when trying to remove intermediate.c\n");
-    return 1;
+    /*if(remove("intermediate.c") != 0)
+        fprintf(stderr, "Error when trying to remove intermediate.c\n");*/
+    return 0;
  }
 void yyerror(s)
 char * s;

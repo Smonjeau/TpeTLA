@@ -5,14 +5,18 @@ enum node_type{
     PROGRAM_NODE,
     IF_NODE,
     WHILE_NODE,
+    DO_WHILE_NODE,
     DEFS_NODE,
     DEF_NODE,
     TYPE_NODE,
     VAR_NODE,
     PRINT_NODE,
+    READ_NODE,
     LIST_NODE,
     STMT_NODE,
-    COND_NODE
+    COND_NODE,
+    ASSIGN_NODE,
+    EXPRESSION_NODE
 
 };
 

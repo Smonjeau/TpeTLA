@@ -35,7 +35,7 @@ int state;
 "*"	{return(MULT);}
 "/"	{return(DIV);}
 "<" {return (LOWER);}
- "<=" {return(LOWER_EQ;)}
+ "<=" {return(LOWER_EQ);}
  ">" {return(GREATER);}
  ">=" {return(GREATER_EQ);}
  "==" {return(EQ);}

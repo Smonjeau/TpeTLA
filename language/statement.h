@@ -1,15 +1,9 @@
 #ifndef STATEMENT__H
 #define STATEMENT__H
 
-#include "variable.h"
+//#include "variable.h"
 
-enum data_type{
-    T_INTEGER,
-    T_STRING,
-    T_GRAPH,
-    T_TREE
-};
-
+/*
 enum graph_type{
     S_GRAPH_TYPE,
     D_GRAPH_TYPE,
@@ -30,7 +24,9 @@ enum statement_type{
     ST_DO_WHILE,
     ST_IF,
     ST_GR_ITER
-};
+};*/
+
+const char * condition_symbols[] = {"==", "!=", "<", "<=", ">", ">="};
 
 enum condition_type{
     COND_EQ,
@@ -44,9 +40,9 @@ enum condition_type{
 typedef struct condition{
     int is_boolean;          //Indica si la operacion es solo un bool
     enum condition_type cond_type;
-    int cond1, cond2;
+    char * cond1, * cond2;
 }condition;
-
+/*
 typedef struct statement {
     int declaration_type;
     void * value;
@@ -93,5 +89,5 @@ statement * create_edges(struct variable * v, struct edge * edge);
 statement * create_graph_definition(int graph_type, int value, struct variable * var);
 statement * create_statement(struct operation * cond, struct statement * st, int type);
 statement * create_gr_iter(struct variable * v, int iter_type);
-
+*/
 #endif
