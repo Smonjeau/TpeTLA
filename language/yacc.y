@@ -27,7 +27,7 @@ struct sym *symp;
 char * str;
 struct ast_node  * ast;
 }
-%type <ast> program defs list def type graph_type n
+%type <ast> program defs list def type graph_type n s print
 %token <symp> VAR
 %token <val> VALUE
 %token <str> STRING_LITERAL
@@ -52,6 +52,7 @@ s:	e SEMICOLON
     | gr_iter
     | print { $$ = $1; }
     | read
+    | if
     ;
 
 print: PRINT OPEN_PAR n CLOSE_PAR SEMICOLON {
@@ -77,7 +78,7 @@ cond_log:   e RELATIONAL_OPS e ;
 cond_and:   cond_log AND cond_log;
 
 cond_or:    cond_log OR cond_log;
-
+/*
 e:  e ARITHMETICAL_OPS t
     | t 
     | VAR ASSIGN_OP VALUE {sym_table_look($1->name)->type == T_INTEGER ? $1->content.int_value = $3 : yyerror("Error al asignar int");}
@@ -114,6 +115,10 @@ e:  e ARITHMETICAL_OPS t
                                                     }
 
                                                     }
+    ;*/
+
+e:  def
+    | assignment 
     ;
 
 edges:
@@ -135,8 +140,13 @@ f:  VAR | VALUE ;
 defs:   defs def SEMICOLON {$$ = add_node(DEFS_NODE,$2,$1,NULL);}| def SEMICOLON {$$ = add_node(DEFS_NODE,$1,NULL,NULL);};
 
 def:    type n {$$ = add_node(DEF_NODE,$1,$2,NULL);}
-        | graph_type vertex_num n {$$ = add_node(DEF_NODE,$1,$3,NULL);}
+        | GRAPH vertex_num n {$$ = add_node(DEF_NODE,$1,$3,NULL);}
         ;
+
+assignment:     n ASSIGN_OP expression 
+            |   n ASSIGN_OP  STRING_LITERAL
+            | n ASSIGN_OP OPEN_BRACKET edges CLOSE_BRACKET
+            ;
 
 
 
@@ -150,22 +160,12 @@ type: INT {type = T_INTEGER ; enum types * aux = malloc(sizeof(int)); *aux= T_IN
      STRING {type = T_STRING; enum types * aux = malloc(sizeof(int)); *aux= T_STRING; $$ = add_node(TYPE_NODE,NULL,NULL,aux);} 
      ;
 
-graph_type: GRAPH {type=T_GRAPH; enum types * aux = malloc(sizeof(int)); *aux= T_GRAPH; $$ = add_node(TYPE_NODE,NULL,NULL,aux);} ;
+//graph_type: GRAPH {type=T_GRAPH; enum types * aux = malloc(sizeof(int)); *aux= T_GRAPH; $$ = add_node(TYPE_NODE,NULL,NULL,aux);} ;
 
-vertex_num: OPEN_PAR VALUE CLOSE_PAR { new_graph_vertex_num = $2; };
+//vertex_num: OPEN_PAR VALUE CLOSE_PAR { new_graph_vertex_num = $2; };
 
 n:  VAR {char * aux = strdup($1->name); $$ = add_node(VAR_NODE,NULL,NULL,aux);};
 
-
-text:   l text 
-        | d text
-        | 
-        ;
-l:  LETTER ;
-
-number: d number ;
-
-d: DECIMAL ;
 
 node_defs:  node_def
         |   node_defs node_def

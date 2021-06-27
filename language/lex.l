@@ -23,7 +23,6 @@ int state;
 "while"   { return(WHILE); }
 "if"    {return(IF);   }
 "else"   {return(ELSE);   }
-"$"	{return 0;}
 "="	{return(ASSIGN_OP);}
 ";"	{return(SEMICOLON);}
 "("	{return(OPEN_PAR);}
