@@ -20,9 +20,10 @@ struct graph {
         int len;        /* number of slots in array */
         char is_sorted; /* true if list is already sorted */
         int list[1];    /* actual list of successors */
-        int weights[1]; /* Weight for each successor */
+        //int weights[1]; /* Weight for each successor */
     } *alist[1];
 };
+int * * weights;
 
 /* create a new graph with n vertices labeled 0..n-1 and no edges */
 Graph
@@ -32,7 +33,15 @@ graph_create(int n)
     int i;
 
     g = malloc(sizeof(struct graph) + sizeof(struct successors *) * (n-1));
+    
+    weights = malloc(sizeof(int *) * n);
+    assert(weights);
+    for(int j = 0; j < n; j++) {
+        weights[j] = malloc(sizeof(int) * n);
+        assert(weights[j]);
+    }
     assert(g);
+
 
     g->n = n;
     g->m = 0;
@@ -74,10 +83,9 @@ graph_add_edge(Graph g, int u, int v, int weight) {
             realloc(g->alist[u], 
                 sizeof(struct successors) + sizeof(int) * (g->alist[u]->len - 1));
     }
-
     /* now add the new sink */
-    g->alist[u]->list[g->alist[u]->d] = v;
-    g->alist[u]->weights[g->alist[u]->d++] = weight;
+    g->alist[u]->list[g->alist[u]->d++] = v;
+    weights[u][v] = weight;
     g->alist[u]->is_sorted = 0;
 
     /* bump edge count */
@@ -174,7 +182,7 @@ graph_foreach(Graph g, int source,
     assert(source < g->n);
 
     for(i = 0; i < g->alist[source]->d; i++) {
-        f(g, source, g->alist[source]->list[i], g->alist[source]->weights[i] , data);
+        f(g, source, g->alist[source]->list[i], weights[source][g->alist[source]->list[i]], data);
     }
 }
 

@@ -158,9 +158,10 @@ edge:   VALUE ARROW VALUE { printf("guardando edge\n");
                                     temp_edges = realloc(temp_edges,sizeof(temp_edges) + 10*sizeof(struct g_edge));
                                 
                                  temp_edges[temp_edges_qty].from = $1;
-                                 temp_edges[temp_edges_qty++].to = $3;
-                                 printf("Nuevo edges qty: %d\n", temp_edges_qty);
-                                 }; 
+                                 temp_edges[temp_edges_qty].to = $3;
+                                 temp_edges[temp_edges_qty++].weight = 0;
+                                 printf("Adding edge de %d a %d con peso %d\n", temp_edges[temp_edges_qty-1].from, temp_edges[temp_edges_qty-1].to, temp_edges[temp_edges_qty-1].weight);
+                                 } 
         | VALUE MINUS OPEN_PAR VALUE CLOSE_PAR ARROW VALUE {
                                 printf("guardando edge con peso\n");
                                 if((temp_edges_qty % 10) == 0)
@@ -169,7 +170,7 @@ edge:   VALUE ARROW VALUE { printf("guardando edge\n");
                                 temp_edges[temp_edges_qty].from = $1;
                                 temp_edges[temp_edges_qty].to = $7;
                                 temp_edges[temp_edges_qty++].weight = $4;
-                                printf("Nuevo edges qty: %d\n", temp_edges_qty);
+                                printf("Adding edge de %d a %d con peso %d\n", temp_edges[temp_edges_qty-1].from, temp_edges[temp_edges_qty-1].to, temp_edges[temp_edges_qty-1].weight);
 
                                 
                                 }
@@ -182,11 +183,13 @@ edge:   VALUE ARROW VALUE { printf("guardando edge\n");
                                 temp_edges[temp_edges_qty].to = $8;
                                 temp_edges[temp_edges_qty++].weight = $5;
 
+                                printf("Adding edge de %d a %d con peso %d\n", temp_edges[temp_edges_qty-1].from, temp_edges[temp_edges_qty-1].to, temp_edges[temp_edges_qty-1].weight);
+
                                 temp_edges[temp_edges_qty].from = $8;
                                 temp_edges[temp_edges_qty].to = $1;
                                 temp_edges[temp_edges_qty++].weight = $5;
+                                printf("Adding edge de %d a %d con peso %d\n", temp_edges[temp_edges_qty-1].from, temp_edges[temp_edges_qty-1].to, temp_edges[temp_edges_qty-1].weight);
 
-                                printf("Nuevo edges qty: %d\n", temp_edges_qty);
 
                                 
                                 }
@@ -196,9 +199,11 @@ edge:   VALUE ARROW VALUE { printf("guardando edge\n");
 
             
             temp_edges[temp_edges_qty].from = $1;
-            temp_edges[temp_edges_qty++].to = $3;
+            temp_edges[temp_edges_qty].to = $3;
+            temp_edges[temp_edges_qty++].weight = 0;
             temp_edges[temp_edges_qty].from = $3;
-            temp_edges[temp_edges_qty++].to = $1;
+            temp_edges[temp_edges_qty].to = $1;
+            temp_edges[temp_edges_qty++].weight = 0;
 
 
 
