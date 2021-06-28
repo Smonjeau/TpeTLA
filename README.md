@@ -85,6 +85,7 @@ El lenguaje presenta los siguientes tipos:
 Las definiciones y declaraciones deben encontrarse por separado, como se puede ver en los siguientes ejemplos:
 
 ```shell
+_START_
 int a;
 int b;
 string c;
@@ -134,6 +135,8 @@ Se definieron los siguientes operadores, enumerados en orden de precendencia, de
 Los operadores lógicos no pueden utilizarse fuera de las condiciones de las funciones _if_, _while_ y _do while_. Por otro lado, los errores de precedencia pueden evitarse con el uso de paréntesis que envuelvan las expresiones.
 
 ### Sentencias
+
+Como punto de entrada se tomó la palabra _START_. Esto se realizó por requisito del presente trabajo pero en el caso de este lenguaje no tiene sentido que _START_ no se encuentre al principio del programa.
 
 Las sentencias pueden tomar las siguientes formas:
 - Condicional IF
@@ -306,12 +309,15 @@ n: VAR
 - **Variable global en la traducción a C.** Al intentar realizar la traducción de las operaciones dfs y bfs se necesitó de una variable global la cual podría interferir con las declaradas por el usuario. Para esto, se definió el nombre de la variable como una cadena de caracteres lo suficientemente larga como para que el usuario no elija ese nombre.
 
 
+- **No hay manejo de aristas** Los grafos que son definidos no pueden ser editados, aunque si se los puede definir como un nuevo grafo (por ejemplo, uno que sea idéntico al anterior pero sin una arista).
+
+
 ## Futuras extensiones
 
 Las posibles mejoras y extensiones para el lenguaje que nos parecen pertinentes son:
 
 - La incorporación de sentencias 'if-else' y 'for', que no presentan grandes diferencias a las ya manejadas por el lenguaje.
-- La ampliación de las funciones de operación sobre grafos, añadiendo algoritmos como los de Dijkstra y Kruskal. Dado el funcionamiento del lenguaje en su forma actual, tampoco presentarían grandes inconvenientes al momento de adaptarlos.
+- La ampliación de las funciones de operación sobre grafos, añadiendo algoritmos como los de Dijkstra y Kruskal. Dado el funcionamiento del lenguaje en su forma actual, tampoco presentarían grandes inconvenientes al momento de adaptarlos. Esto es para aprovechar los pesos de las aristas que no se llegaron a aprovechar en esta implementacion
 - El manejo de matrices para la representación de grafos posee una complejidad un poco mayor, ya que se debe incluir un nuevo tipo de variable con todo lo que esto conlleva (definición, operaciones permitidas, funciones que trabajen con matrices).
 - El desarrollo de una función para ilustrar grafos es otra alternativa que podría adaptarse a la estructura que presenta el lenguaje actual.
 
