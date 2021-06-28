@@ -727,9 +727,9 @@ int main(int argc, char *argv[]){
             exit(1);
         }
 
-        fputs("#include \"graph_impl/graph.h\"\n", c_out);
+        fputs("#include \"language/graph_impl/graph.h\"\n", c_out);
         fputs("#include <stdio.h>\n", c_out);
-        fputs("#include \"graph_impl/search.h\"\n", c_out);
+        fputs("#include \"language/graph_impl/search.h\"\n", c_out);
         fputs("#include <string.h>\n", c_out);
         fputs("int main(){goto entry_point;", c_out);
 
@@ -746,7 +746,7 @@ int main(int argc, char *argv[]){
     }
     free_resources();
 
-    system("gcc graph_impl/queue.c graph_impl/graph.c graph_impl/search.c intermediate.c -o runme");
+    system("gcc language/graph_impl/queue.c language/graph_impl/graph.c language/graph_impl/search.c intermediate.c -o runme");
 
     //TODO Descomentar esto
     /*if(remove("intermediate.c") != 0)
