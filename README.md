@@ -188,12 +188,105 @@ print(c);
 
 ### Producciones
 
-*PEGAR GRAMÁTICA AQUÍ*
+entry_point: ENTRY_POINT
+
+program: defs list
+       | defs
+
+list: s
+    | list s
+
+s: e ;
+ | while
+ | do_while
+ | gr_iter
+ | print
+ | read
+ | if
+ | entry_point
+
+print: PRINT ( n ) ;
+
+read: READ ( n ) ;
+
+while: WHILE ( condition ) { list }
+     | WHILE ( condition ) { }
+
+do_while: DO { list } WHILE ( condition ) ;
+        | DO { } WHILE ( condition ) ;
+
+if: IF ( condition ) { list }
+  | IF ( condition ) { }
+
+condition: cond_log
+         | cond_and
+         | cond_or
+         | cond_not
+         | ( condition )
+
+cond_log: t == t
+        | t != t
+        | t < t
+        | t <= t
+        | t > t
+        | t >= t
+
+cond_and: condition AND condition
+
+cond_or: condition OR condition
+
+cond_not: NOT condition
+
+e: assignment
+ | n
+
+edges: edges , edge
+     | edge
+
+edge: VALUE -> VALUE
+    | VALUE -( VALUE )-> VALUE
+    | VALUE <-( VALUE )-> VALUE
+    | VALUE <-> VALUE
+
+t: n
+ | VALUE
+
+defs: defs def ;
+    | def ;
+    | entry_point
+
+def: type n
+   | graph_type vertex_num n
+
+vertex_num: ( VALUE )
+
+assignment: n = expression
+          | n = operation
+          | n = STRING_LITERAL
+          | n = { edges }
+
+expression: t
+
+operation: t + t
+         | t - t
+         | t * t
+         | t / t
+
+gr_iter: DFS ( n , t , n ) { list }
+       | DFS ( n , t , n ) { }
+       | BFS ( n , t , n ) { list }
+       | BFS ( n , t , n ) { }
+
+type: INT
+    | STRING
+
+graph_type: GRAPH
+
+n: VAR
 
 ## Dificultades encontradas
 
-- Resolución de conflictos _shift/reduce_ en la gramática.
-- 
+- **Resolución de conflictos _shift/reduce_ en la gramática.** En cierto momento la gramática se vio perturbada por 17 conflictos, los cuales no tardaron en volverse 60. Afortunadamente, esto se debió a la capacidad exponencial de propagación de errores, y al cambiar las producciones de tan solo dos gramáticas se volvió a tener cero conflictos.
 
 ## Futuras extensiones
 
