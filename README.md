@@ -59,7 +59,7 @@ El compilador generado se encuentra en _TpeTLA/language_.
 ### Ejemplos
 
 En la carpeta _examples_ pueden encontrarse los siguientes programas:
-- _program1_, que hace algo, 
+- example1, donde se implementa un contador, se testean las distintas operaciones aritméticas y la instrucción condicional, 
 - _program2_, que hace algo,
 - _program3_, que hace algo,
 - _program4_, que hace algo, y
