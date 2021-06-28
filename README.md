@@ -60,10 +60,10 @@ El compilador generado se encuentra en _TpeTLA/language_. Como ejecuta _gcc_, se
 
 En la carpeta _examples_ pueden encontrarse los siguientes programas:
 - _example1_, donde se implementa un contador, se testean las distintas operaciones aritméticas y la instrucción condicional, 
-- _example2_, donde se crea un grafo y se aplican los algoritmos DFS y BFS, imprimiendo el recorrido a cada paso;
-- _example3_, que hace algo,
-- _example4_, que hace algo, y
-- _example5_, que hace algo.
+- _example2_, donde se crea un grafo y se aplican los algoritmos DFS y BFS, mostrando el recorrido a cada paso;
+- _example3_, donde se crea un grafo y se lo imprime en pantalla;
+- _example4_, donde se calcula el factorial de un número recibido por entrada estándar; y
+- _example5_, donde se lee por entrada estándar hasta recibir un número mayor a cero.
 
 Estos se compilan y ejecutan de la siguiente forma:
 
