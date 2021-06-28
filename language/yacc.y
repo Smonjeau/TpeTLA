@@ -254,7 +254,6 @@ assignment:     n ASSIGN_OP expression {
             | n ASSIGN_OP OPEN_BRACKET edges CLOSE_BRACKET{ struct sym * s = (struct sym *)$1->data;
                                                     if(s->type == T_GRAPH){
                                                         int nqty = s->content.graph_data.nodes_qty;
-                                                        printf("inicializando grafito\n");
                                                         for(int i = 0; i<temp_edges_qty;i++){
                                                             if(NODE_IN_RANGE(temp_edges[i].from,nqty) && NODE_IN_RANGE(temp_edges[i].to,nqty)){
                                                                 // printf("Bien, de %d a %d\n",temp_edges[i].from,temp_edges[i].to);
@@ -513,6 +512,7 @@ void decode_tree(ast_node * node, FILE * c_out) {
     struct graph_sym data;
     struct gr_iteration * griter;
     int current_graph_iter;
+    int aux_node;
 
     switch(node->type) {
         case LIST_NODE:
@@ -623,13 +623,20 @@ void decode_tree(ast_node * node, FILE * c_out) {
         case DFS_NODE:
             left_var = node->left;
             left_sym = (struct sym *)left_var->data;
+            
+
 
             griter = (struct gr_iteration * ) node->data;
-            if(!isdigit(griter->init[0])){
+            if(!isdigit(griter->init[0]) && griter->init[0]!= '-'){
                 struct sym * init_sym = sym_table_look(griter->init);
                 if(init_sym->type != T_INTEGER)
                     yyerror("DFS root variable must be int.");
-            }
+                else
+                    aux_node = init_sym->content.int_value;
+            }else
+                aux_node = atoi(griter->init);
+            if (aux_node < 0 || aux_node > left_sym->content.graph_data.nodes_qty)
+                yyerror("Invalid start node");
             if(griter->var->type != T_INTEGER)
                 yyerror("DFS iterator variable must be int.");
             current_graph_iter = graph_iterations_count++;
@@ -648,11 +655,16 @@ void decode_tree(ast_node * node, FILE * c_out) {
             left_sym = (struct sym *)left_var->data;
 
             griter = (struct gr_iteration * ) node->data;
-            if(!isdigit(griter->init[0])){
+             if(!isdigit(griter->init[0]) && griter->init[0]!= '-'){
                 struct sym * init_sym = sym_table_look(griter->init);
                 if(init_sym->type != T_INTEGER)
                     yyerror("BFS root variable must be int.");
-            }
+                else
+                    aux_node = init_sym->content.int_value;
+            }else
+                aux_node = atoi(griter->init);
+            if (aux_node < 0 || aux_node > left_sym->content.graph_data.nodes_qty)
+                yyerror("Invalid start node");
             if(griter->var->type != T_INTEGER)
                 yyerror("BFS iterator variable must be int.");
 
