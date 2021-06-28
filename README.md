@@ -44,7 +44,7 @@ El compilador se encarga de generar un _abstract syntax tree (AST)_ para la gene
 ```shell
 git clone https://github.com/Smonjeau/TpeTLA 
 cd TpeTLA/
-make
+make all
 ```
 
 ### Uso
@@ -52,7 +52,8 @@ make
 El compilador generado se encuentra en _TpeTLA/language_. Como ejecuta _gcc_, se debe lo tener instalado de antemano.
 
 ```shell
-./build.sh [input] [output]
+./lang [file]
+./runme
 ```
 
 ### Ejemplos
@@ -64,10 +65,11 @@ En la carpeta _examples_ pueden encontrarse los siguientes programas:
 - _example4_, que hace algo, y
 - _example5_, que hace algo.
 
-Estos pueden ser compilados por medio del Makefile:
+Estos se compilan y ejecutan de la siguiente forma:
 
 ```shell
-make examples
+./lang ./examples/example1
+./runme
 ```
 
 ## Descripción de la gramática
