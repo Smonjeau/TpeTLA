@@ -1,15 +1,9 @@
 #ifndef STATEMENT__H
 #define STATEMENT__H
 
-#include "variable.h"
+//#include "variable.h"
 
-enum data_type{
-    T_INTEGER,
-    T_STRING,
-    T_GRAPH,
-    T_TREE
-};
-
+/*
 enum graph_type{
     S_GRAPH_TYPE,
     D_GRAPH_TYPE,
@@ -30,16 +24,39 @@ enum statement_type{
     ST_DO_WHILE,
     ST_IF,
     ST_GR_ITER
+};*/
+
+const char * condition_symbols[] = {"==", "!=", "<", "<=", ">", ">="};
+
+enum condition_type{
+    COND_EQ,
+    COND_NE,
+    COND_LOWER,
+    COND_LOWER_EQ,
+    COND_GREATER,
+    COND_GREATER_EQ,
 };
-/*
-typedef struct condition
-{
+enum logical_operand{
+    LOG_NOOP = 0,
+    LOG_NOT,
+    LOG_AND,
+    LOG_OR
+};
+
+enum parenthesis{
+    DONT_USE_PAR = 0,
+    USE_PAR,
+};
+
+typedef struct condition{
     int is_boolean;          //Indica si la operacion es solo un bool
-    int condition_type;
-    struct condition * cond1, * cond2;
-    void * value;
+    enum condition_type cond_type;
+    char * cond1, * cond2;
+    enum types involved_types;
+
 }condition;
-*/
+
+/*
 typedef struct statement {
     int declaration_type;
     void * value;
@@ -79,11 +96,12 @@ typedef struct graph_iter_info {
     int iter_type;
 }graph_iter_info;
 
+
 statement * create_assignment(struct variable * v, struct operation * op, char * s);
 statement * create_definition(int data_type, variable * v);
 statement * create_edges(struct variable * v, struct edge * edge);
 statement * create_graph_definition(int graph_type, int value, struct variable * var);
 statement * create_statement(struct operation * cond, struct statement * st, int type);
 statement * create_gr_iter(struct variable * v, int iter_type);
-
+*/
 #endif

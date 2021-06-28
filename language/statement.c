@@ -63,7 +63,7 @@ statement * create_statement(struct operation * cond, struct statement * st, int
     statement * statement = malloc(sizeof(struct statement));
     statement_info * info = malloc(sizeof(statement_info));
     info->condition = cond;
-    info->st = st;
+   //  info->st = st;
 
     statement->declaration_type = type; 
     statement->value = info;

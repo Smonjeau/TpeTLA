@@ -11,7 +11,7 @@ void graph_destroy(Graph);
 
 /* add an edge to an existing graph */
 /* doing this more than once may have unpredictable results */
-void graph_add_edge(Graph, int source, int sink);
+void graph_add_edge(Graph, int source, int sink, int weight);
 
 /* return the number of vertices/edges in the graph */
 int graph_vertex_count(Graph);
@@ -27,8 +27,11 @@ int graph_has_edge(Graph, int source, int sink);
 /* supplying data as final parameter to f */
 /* no particular order is guaranteed */
 void graph_foreach(Graph g, int source,
-        void (*f)(Graph g, int source, int sink, void *data),
+        void (*f)(Graph g, int source, int sink, int weight, void *data),
         void *data);
 
 void search_bfs(Graph g, int vertex);
+
+void print_graph (Graph g);
+
 #endif

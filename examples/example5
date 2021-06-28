@@ -1,0 +1,21 @@
+_START_
+int a;
+string insert;
+string error;
+string enter;
+
+insert = "Inserte un numero";
+error = "El numero debe ser mayor a 0";
+enter = "\n";
+a = -1;
+do{
+    print(insert);
+    print(enter);
+    read(a);
+    if(a < 0){
+        print(error);
+        print(enter);
+
+    }
+}while(a < 0);
+

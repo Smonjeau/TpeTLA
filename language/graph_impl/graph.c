@@ -20,8 +20,10 @@ struct graph {
         int len;        /* number of slots in array */
         char is_sorted; /* true if list is already sorted */
         int list[1];    /* actual list of successors */
+        //int weights[1]; /* Weight for each successor */
     } *alist[1];
 };
+int * * weights;
 
 /* create a new graph with n vertices labeled 0..n-1 and no edges */
 Graph
@@ -31,7 +33,15 @@ graph_create(int n)
     int i;
 
     g = malloc(sizeof(struct graph) + sizeof(struct successors *) * (n-1));
+    
+    weights = malloc(sizeof(int *) * n);
+    assert(weights);
+    for(int j = 0; j < n; j++) {
+        weights[j] = malloc(sizeof(int) * n);
+        assert(weights[j]);
+    }
     assert(g);
+
 
     g->n = n;
     g->m = 0;
@@ -58,10 +68,9 @@ graph_destroy(Graph g)
     free(g);
 }
 
-/* add an edge to an existing graph */
+
 void
-graph_add_edge(Graph g, int u, int v)
-{
+graph_add_edge(Graph g, int u, int v, int weight) {
     assert(u >= 0);
     assert(u < g->n);
     assert(v >= 0);
@@ -74,9 +83,9 @@ graph_add_edge(Graph g, int u, int v)
             realloc(g->alist[u], 
                 sizeof(struct successors) + sizeof(int) * (g->alist[u]->len - 1));
     }
-
     /* now add the new sink */
     g->alist[u]->list[g->alist[u]->d++] = v;
+    weights[u][v] = weight;
     g->alist[u]->is_sorted = 0;
 
     /* bump edge count */
@@ -155,11 +164,16 @@ graph_has_edge(Graph g, int source, int sink)
     }
 }
 
+
+void print_edges(Graph g, int source, int sink, int weight, void *data){
+    printf("%d --(%d)--> %d\n",source, weight, sink);
+}
+
 /* invoke f on all edges (u,v) with source u */
 /* supplying data as final parameter to f */
 void
 graph_foreach(Graph g, int source,
-    void (*f)(Graph g, int source, int sink, void *data),
+    void (*f)(Graph g, int source, int sink, int weight, void *data),
     void *data)
 {
     int i;
@@ -168,8 +182,20 @@ graph_foreach(Graph g, int source,
     assert(source < g->n);
 
     for(i = 0; i < g->alist[source]->d; i++) {
-        f(g, source, g->alist[source]->list[i], data);
+        f(g, source, g->alist[source]->list[i], weights[source][g->alist[source]->list[i]], data);
     }
+}
+
+void print_graph(Graph g){
+    printf("Graph\nVertices:");
+    int vqty = graph_vertex_count(g);
+    for (int i = 0; i<vqty;i++)
+        printf(" %d ", i);
+    
+    printf("\nEdges:\n");
+    for (int i = 0; i<vqty;i++)
+        graph_foreach(g,i,print_edges,NULL);
+
 }
 
 

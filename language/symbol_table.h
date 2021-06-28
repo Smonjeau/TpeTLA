@@ -3,6 +3,17 @@
 
 #define MAX_SYMB 1024
 
+enum types{
+    NONE = 0,
+    T_INTEGER,
+    T_STRING,
+    T_GRAPH,
+    T_TREE,
+    T_ERROR
+    };
+
+
+
 struct g_edge{
     int from;
     int to;
@@ -24,4 +35,11 @@ struct sym{
     int type;
 };
 
+struct gr_iteration{
+    char * init;
+    struct sym * var;
+};
+
+
+struct sym * sym_table_look(char * s);
 #endif
