@@ -641,7 +641,7 @@ void decode_tree(ast_node * node, FILE * c_out) {
                     aux_node = init_sym->content.int_value;
             }else
                 aux_node = atoi(griter->init);
-            if (aux_node < 0 || aux_node > left_sym->content.graph_data.nodes_qty)
+            if (aux_node < 0 || aux_node >= left_sym->content.graph_data.nodes_qty)
                 yyerror("Invalid start node");
             if(griter->var->type != T_INTEGER)
                 yyerror("DFS iterator variable must be int.");
@@ -669,7 +669,7 @@ void decode_tree(ast_node * node, FILE * c_out) {
                     aux_node = init_sym->content.int_value;
             }else
                 aux_node = atoi(griter->init);
-            if (aux_node < 0 || aux_node > left_sym->content.graph_data.nodes_qty)
+            if (aux_node < 0 || aux_node >= left_sym->content.graph_data.nodes_qty)
                 yyerror("Invalid start node");
             if(griter->var->type != T_INTEGER)
                 yyerror("BFS iterator variable must be int.");
