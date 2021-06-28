@@ -1,0 +1,25 @@
+_START_
+graph (15) g;
+string salto;
+string dfs_msg;
+string bfs_msg;
+int nodoactual;
+salto = "\n";
+dfs_msg = "---- DFS -----\n";
+bfs_msg = "---- BFS -----\n";
+
+g = {0->1 , 0->3 , 3->5,  3->6, 3->8, 8->10};
+
+print(dfs_msg);
+
+dfs(g,0,nodoactual){
+    print(nodoactual);
+    print(salto);
+}
+
+print(bfs_msg);
+
+bfs(g,0,nodoactual){
+    print(nodoactual);
+    print(salto);    
+}

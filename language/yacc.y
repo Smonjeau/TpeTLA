@@ -254,7 +254,6 @@ assignment:     n ASSIGN_OP expression {
             | n ASSIGN_OP OPEN_BRACKET edges CLOSE_BRACKET{ struct sym * s = (struct sym *)$1->data;
                                                     if(s->type == T_GRAPH){
                                                         int nqty = s->content.graph_data.nodes_qty;
-                                                        printf("inicializando grafito\n");
                                                         for(int i = 0; i<temp_edges_qty;i++){
                                                             if(NODE_IN_RANGE(temp_edges[i].from,nqty) && NODE_IN_RANGE(temp_edges[i].to,nqty)){
                                                                 // printf("Bien, de %d a %d\n",temp_edges[i].from,temp_edges[i].to);

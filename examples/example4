@@ -1,0 +1,25 @@
+_START_
+int n;
+int fact;
+int i;
+string hello;
+string error;
+hello = "Ingrese un numero para calcular el factorial";
+error = "Valor inválido";
+i=0;
+fact = 1;
+print(hello);
+read(n);
+if (n < 0){
+    print(error);
+}
+if (n == 0){
+    print(fact);
+}
+if (n > 0){
+    while(n > 0){
+        fact = fact * n;
+        n = n - 1;
+    }
+    print(fact);
+}
