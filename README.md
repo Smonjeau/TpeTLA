@@ -299,6 +299,13 @@ n: VAR
 
 - **Resolución de conflictos _shift/reduce_ en la gramática.** En cierto momento la gramática se vio perturbada por 17 conflictos, los cuales no tardaron en volverse 60. Afortunadamente, esto se debió a la capacidad exponencial de propagación de errores, y al cambiar las producciones de tan solo dos gramáticas se volvió a tener cero conflictos.
 
+- **Las definiciones se realizan al inicio del programa.** Debido a la forma en la que se generó la gramática inicialmente, las variables son definidas al inicio y luego podrán ser inicializadas. Esto ocurre tanto para el tipo int, string y graph.
+
+- **Las operaciones aritméticas no se realizan de manera recursiva.** A causa de los conflictos anteriormente descritos, sumado a la falta de tiempo, las operaciones aritméticas se realizan entre variables y constantes. A diferencia de las operaciones lógicas que sí realizan la recursión correspondiente.
+
+- **Variable global en la traducción a C.** Al intentar realizar la traducción de las operaciones dfs y bfs se necesitó de una variable global la cual podría interferir con las declaradas por el usuario. Para esto, se definió el nombre de la variable como una cadena de caracteres lo suficientemente larga como para que el usuario no elija ese nombre.
+
+
 ## Futuras extensiones
 
 Las posibles mejoras y extensiones para el lenguaje que nos parecen pertinentes son:
