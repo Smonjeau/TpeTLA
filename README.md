@@ -136,7 +136,7 @@ Los operadores lógicos no pueden utilizarse fuera de las condiciones de las fun
 
 ### Sentencias
 
-Como punto de entrada se tomó la palabra _START_. Esto se realizó por requisito del presente trabajo pero en el caso de este lenguaje no tiene sentido que \_START_ no se encuentre al principio del programa.
+Como punto de entrada se tomó la palabra \_START_. Esto se realizó por requisito del presente trabajo pero en el caso de este lenguaje no tiene sentido que \_START_ no se encuentre al principio del programa.
 
 Las sentencias pueden tomar las siguientes formas:
 - Condicional IF
