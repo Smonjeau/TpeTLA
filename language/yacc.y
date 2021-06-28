@@ -407,6 +407,13 @@ void free_resources(){
         }
     }
 }
+void free_tree(ast_node * node){
+    if(node == NULL)
+        return;
+    free_tree(node->left);
+    free_tree(node->right);
+    free(node);
+}
 void decode_operation(ast_node * node, FILE * c_out) {
     switch(node -> type){
         case PLUS_NODE:
@@ -547,7 +554,6 @@ void decode_tree(ast_node * node, FILE * c_out) {
 
         case ASSIGN_NODE:
             left_var = node->left;
-            printf("TOY EN ASSSIGN NODE\n");
             right_var = node->right;
             left_sym = (struct sym *)left_var->data;
             switch(left_sym->type) {
@@ -560,6 +566,7 @@ void decode_tree(ast_node * node, FILE * c_out) {
                         fprintf(c_out, "; ");
 
                     }
+                    
                     break;
                 case T_STRING:
                     fprintf(c_out, "%s = %s;", left_sym->name, (char *)right_var->data);
@@ -721,10 +728,8 @@ int main(int argc, char *argv[]){
              yyparse();
     
     }else if (argc == 1){
-        //TODO esto ta roto
-        //leemos d stdin
-        // while(getchar() != EOF)
-            yyparse();
+        fprintf(stderr,"Must provide a file\n");
+        exit(1);
     }
 
     printf("Fin del parsing\n");
@@ -757,12 +762,13 @@ int main(int argc, char *argv[]){
 
     }
     free_resources();
+    free_tree(root);
 
     system("gcc language/graph_impl/queue.c language/graph_impl/graph.c language/graph_impl/search.c intermediate.c -o runme");
 
-    //TODO Descomentar esto
-    /*if(remove("intermediate.c") != 0)
-        fprintf(stderr, "Error when trying to remove intermediate.c\n");*/
+    
+    if(remove("intermediate.c") != 0)
+        fprintf(stderr, "Error when trying to remove intermediate.c\n");
     return 0;
  }
 void yyerror(s)
