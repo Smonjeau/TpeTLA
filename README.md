@@ -35,7 +35,6 @@ El compilador, desarrollado en C, genera en su salida programas en el mismo leng
 Debido a la definición de la gramática, las declaraciones y las asignaciones se deben realizar en líneas separadas, las expresiones condicionales solo comparan variables, y la función _print_ permite imprimir únicamente variables. Además, no se tiene soporte para sentencias 'if-else' ni bucles de tipo 'for'.
 
 ## Proyecto
-
 Para el desarrollo del presente trabajo práctico se utilizó el analizador léxico Lex y el compilador de compiladores YACC, el cual recibe como entrada una gramática en BNF. La descripción de la misma puede encontrarse entonces en los archivos _lex.l_ y _yacc.y_, situados en la carpeta _TpeTLA/language_.
 La implementación de los grafos, con sus constructores y algoritmos de recorrido, pueden encontrarse en la carpeta _TpeTLA/graph\_impl_.
 El compilador se encarga de generar un _abstract syntax tree (AST)_ para la generación de código, donde los nodos son los terminales y no-terminales que componen programa.
@@ -50,7 +49,7 @@ make
 
 ### Uso
 
-El compilador generado se encuentra en _TpeTLA/language_.
+El compilador generado se encuentra en _TpeTLA/language_. Como ejecuta _gcc_, se debe lo tener instalado de antemano.
 
 ```shell
 ./build.sh [input] [output]
@@ -59,11 +58,11 @@ El compilador generado se encuentra en _TpeTLA/language_.
 ### Ejemplos
 
 En la carpeta _examples_ pueden encontrarse los siguientes programas:
-- example1, donde se implementa un contador, se testean las distintas operaciones aritméticas y la instrucción condicional, 
-- _program2_, que hace algo,
-- _program3_, que hace algo,
-- _program4_, que hace algo, y
-- _program5_, que hace algo.
+- _example1_, donde se implementa un contador, se testean las distintas operaciones aritméticas y la instrucción condicional, 
+- _example2_, donde se crea un grafo y se aplican los algoritmos DFS y BFS, imprimiendo el recorrido a cada paso;
+- _example3_, que hace algo,
+- _example4_, que hace algo, y
+- _example5_, que hace algo.
 
 Estos pueden ser compilados por medio del Makefile:
 
@@ -159,15 +158,25 @@ while(<condición>);
 
 - Recorrido de grafos
 ```
-bfs();
-dfs();
+graph (10) g;
+int root;
+int current_node;
+
+g = { 0->1, 0->3, 3->5, 3->7, 7->9, 9->2, 2->4, 7->6, 6->8 };
+
+bfs(g,root,current_node);
+dfs(g,root,current_node);
 ```
 
 - Mecanismo de entrada de datos READ
 ```
 int a;
+string s;
 
 read(a);
+read(s);
+
+print(s);
 print(a);
 ```
 
@@ -293,7 +302,7 @@ n: VAR
 Las posibles mejoras y extensiones para el lenguaje que nos parecen pertinentes son:
 
 - La incorporación de sentencias 'if-else' y 'for', que no presentan grandes diferencias a las ya manejadas por el lenguaje.
-- La ampliación de las funciones de operación sobre grafos, añadiendo algoritmos como los de Dijkstra y Kruskal. Dado el funcionamiento del lenguaje en su forma actual, tampoco presentarían inconvenientes al momento de adaptarlos.
+- La ampliación de las funciones de operación sobre grafos, añadiendo algoritmos como los de Dijkstra y Kruskal. Dado el funcionamiento del lenguaje en su forma actual, tampoco presentarían grandes inconvenientes al momento de adaptarlos.
 - El manejo de matrices para la representación de grafos posee una complejidad un poco mayor, ya que se debe incluir un nuevo tipo de variable con todo lo que esto conlleva (definición, operaciones permitidas, funciones que trabajen con matrices).
 - El desarrollo de una función para ilustrar grafos es otra alternativa que podría adaptarse a la estructura que presenta el lenguaje actual.
 
