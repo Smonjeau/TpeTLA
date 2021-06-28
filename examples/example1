@@ -1,0 +1,28 @@
+_START_
+int a;
+string salto;
+salto = "\n";
+
+a = 3;
+a= a + 1;
+a = a - a;
+print(a);
+print(salto);
+a = a + 4;
+print(a);
+print(salto);
+a = a / 2;
+print(a);
+print(salto);
+a = 1000 * a;
+print(a);
+print(salto);
+
+if(a <= 5000){
+    a = 0; 
+}
+while(a < 100) {
+    a = a + 1;
+    print(a);
+    print(salto);
+}
