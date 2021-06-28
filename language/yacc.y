@@ -152,30 +152,26 @@ edges:
         | edge {if (temp_edges == NULL) temp_edges = malloc(10*sizeof(struct g_edge));}
         ;
 
-edge:   VALUE ARROW VALUE { printf("guardando edge\n");
-
+edge:   VALUE ARROW VALUE { 
                                  if((temp_edges_qty % 10) == 0)
                                     temp_edges = realloc(temp_edges,sizeof(temp_edges) + 10*sizeof(struct g_edge));
                                 
                                  temp_edges[temp_edges_qty].from = $1;
                                  temp_edges[temp_edges_qty].to = $3;
                                  temp_edges[temp_edges_qty++].weight = 0;
-                                 printf("Adding edge de %d a %d con peso %d\n", temp_edges[temp_edges_qty-1].from, temp_edges[temp_edges_qty-1].to, temp_edges[temp_edges_qty-1].weight);
+                                 
                                  } 
         | VALUE MINUS OPEN_PAR VALUE CLOSE_PAR ARROW VALUE {
-                                printf("guardando edge con peso\n");
                                 if((temp_edges_qty % 10) == 0)
                                     temp_edges = realloc(temp_edges,sizeof(temp_edges) + 10*sizeof(struct g_edge));
                                 
                                 temp_edges[temp_edges_qty].from = $1;
                                 temp_edges[temp_edges_qty].to = $7;
                                 temp_edges[temp_edges_qty++].weight = $4;
-                                printf("Adding edge de %d a %d con peso %d\n", temp_edges[temp_edges_qty-1].from, temp_edges[temp_edges_qty-1].to, temp_edges[temp_edges_qty-1].weight);
 
                                 
                                 }
         | VALUE LOWER MINUS OPEN_PAR VALUE CLOSE_PAR ARROW VALUE {
-                                printf("guardando edge doble con peso\n");
                                 if((temp_edges_qty % 10) == 0)
                                     temp_edges = realloc(temp_edges,sizeof(temp_edges) + 10*sizeof(struct g_edge));
                                 
@@ -183,12 +179,11 @@ edge:   VALUE ARROW VALUE { printf("guardando edge\n");
                                 temp_edges[temp_edges_qty].to = $8;
                                 temp_edges[temp_edges_qty++].weight = $5;
 
-                                printf("Adding edge de %d a %d con peso %d\n", temp_edges[temp_edges_qty-1].from, temp_edges[temp_edges_qty-1].to, temp_edges[temp_edges_qty-1].weight);
 
                                 temp_edges[temp_edges_qty].from = $8;
                                 temp_edges[temp_edges_qty].to = $1;
                                 temp_edges[temp_edges_qty++].weight = $5;
-                                printf("Adding edge de %d a %d con peso %d\n", temp_edges[temp_edges_qty-1].from, temp_edges[temp_edges_qty-1].to, temp_edges[temp_edges_qty-1].weight);
+                                
 
 
                                 
@@ -223,7 +218,7 @@ def:    type n {$$ = add_node(DEF_NODE,$1,$2,NULL);}
             }
         ;
 
-vertex_num: OPEN_PAR VALUE CLOSE_PAR { new_graph_vertex_num = $2; {printf("VERTEX\n");} };
+vertex_num: OPEN_PAR VALUE CLOSE_PAR { new_graph_vertex_num = $2; {} };
 
 assignment:     n ASSIGN_OP expression {
                                 ((struct sym *)$1->data)->type == T_INTEGER ? ((struct sym *)$1->data)->content.int_value = $3 : yyerror("Error al asignar int");
@@ -261,7 +256,7 @@ assignment:     n ASSIGN_OP expression {
                                                         int nqty = s->content.graph_data.nodes_qty;
                                                         for(int i = 0; i<temp_edges_qty;i++){
                                                             if(NODE_IN_RANGE(temp_edges[i].from,nqty) && NODE_IN_RANGE(temp_edges[i].to,nqty)){
-                                                                // printf("Bien, de %d a %d\n",temp_edges[i].from,temp_edges[i].to);
+                                                                
                                                                 ;
                                                             }else{
                                                                 yyerror("Index out of range");
@@ -601,7 +596,6 @@ void decode_tree(ast_node * node, FILE * c_out) {
             break;
 
         case IF_NODE:
-            printf("ACAAA IF\n");
             left_var = node->left;
             condition_aux = (condition *)left_var->data;
             fprintf(c_out,"if(");
@@ -737,7 +731,6 @@ int main(int argc, char *argv[]){
         exit(1);
     }
 
-    printf("Fin del parsing\n");
     if(!found_entry_point) {
         fprintf(stderr, "Entry point not found.\n");
         exit(1);
@@ -799,16 +792,7 @@ struct sym * sym_table_look(char * s){
                         
                 }
                 
-                printf("Ya estaba en la tabla, el nombre es %s y el valor es",st->name);
-                if(st->type == T_INTEGER)
-                    printf(" %d\n",st->content.int_value);
-                else if(st->type == T_STRING)
-                    printf(" %s\n",st->content.string_value);
-                else if(st->type == T_GRAPH){
-                    printf("este es un grafo, tiene %d vertices\n",st->content.graph_data.nodes_qty);
-                    for(int i = 0; i< st->content.graph_data.edges_qty ; i++)
-                        printf("edge %d de %d a %d con peso %d\n",i,st->content.graph_data.edges_info[i].from,st->content.graph_data.edges_info[i].to,st->content.graph_data.edges_info[i].weight);
-                }
+                
                                 
                 return st;
 
@@ -816,7 +800,6 @@ struct sym * sym_table_look(char * s){
 
 
             if(!st->name){
-                printf("vertex num vale %d\n",new_graph_vertex_num);
                 if(type == NONE){
                     yyerror("Variable not found\n");
                 } else if(type == T_GRAPH && new_graph_vertex_num <= 0) {
@@ -824,10 +807,8 @@ struct sym * sym_table_look(char * s){
                 }
                 syms_counter++;
                 st->name = strdup(s);
-                printf("Guardamos en la tabla de simbolos la variable %s \n",st->name);
                 st->type = type;
                 if(type == T_GRAPH) {
-                    printf("es de tipo grafo\n");
                     
                     st->content.graph_data.nodes_qty = new_graph_vertex_num;
                     new_graph_vertex_num = 0;
